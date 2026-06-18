@@ -1,0 +1,41 @@
+# Node
+node_modules/
+dist/
+.vite/
+.angular/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+*.egg-info/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+infrastructure/scripts/.dev-logs/
+infrastructure/scripts/.dev-pids
+
+# Build artifacts
+*.pyc
+build/

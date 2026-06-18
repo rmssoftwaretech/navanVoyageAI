@@ -102,6 +102,9 @@ class OrchestratorAgent(BaseAgent):
                 except Exception as exc:
                     sub_results[name] = AgentResult(agent=name, content="", success=False)
                     log.warning("Sub-agent %s failed: %s", name, exc)
+                # Emit MCP tool call/result events from sub-agent metadata
+                for mcp_event in sub_results[name].metadata.get("mcp_events", []):
+                    yield sse(mcp_event)
                 yield sse({"type": "agent_done", "agent": name})
 
         # Aggregate + stream tokens

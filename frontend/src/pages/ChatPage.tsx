@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import AppLayout from '@/components/AppLayout'
+import AdminPanel from '@/components/admin/AdminPanel'
 import ChatWindow from '@/components/Chat/ChatWindow'
 import McpInspectorPanel from '@/components/McpInspectorPanel'
 import { getMe } from '@/services/auth'
@@ -160,27 +161,8 @@ export default function ChatPage() {
         )}
       </AppLayout>
 
-      {/* Admin modal placeholder — wired in NVA-04 */}
       {adminOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ background: 'rgba(0,0,0,0.5)' }}
-          onClick={() => setAdminOpen(false)}
-        >
-          <div
-            className="bg-white flex flex-col"
-            style={{ width: '75vw', height: '75vh', boxShadow: '0 4px 24px rgba(0,0,0,0.2)' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-              <span className="font-semibold" style={{ color: 'var(--navy)' }}>⚙ Admin</span>
-              <button onClick={() => setAdminOpen(false)} style={{ color: 'var(--text-muted)' }}>✕</button>
-            </div>
-            <div className="flex-1 flex items-center justify-center" style={{ color: 'var(--text-muted)' }}>
-              <p className="text-sm">Admin panel — wired in NVA-04</p>
-            </div>
-          </div>
-        </div>
+        <AdminPanel user={user} onClose={() => setAdminOpen(false)} />
       )}
     </>
   )

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import AppLayout from '@/components/AppLayout'
 import AdminPanel from '@/components/admin/AdminPanel'
 import ChatWindow from '@/components/Chat/ChatWindow'
@@ -21,6 +21,7 @@ export default function ChatPage() {
   )
   const [inspectorEvents, setInspectorEvents] = useState<AgentEvent[]>([])
   const [adminOpen, setAdminOpen] = useState(false)
+  const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     getMe().then(setUser).catch(() => {})
@@ -39,6 +40,10 @@ export default function ChatPage() {
     })
   }
 
+  function handleStop() {
+    abortRef.current?.abort()
+  }
+
   async function handleNewConversation() {
     try {
       const conv = await createConversation()
@@ -53,6 +58,9 @@ export default function ChatPage() {
 
   const handleSend = useCallback(async (content: string) => {
     if (!activeId || isStreaming) return
+
+    const ctrl = new AbortController()
+    abortRef.current = ctrl
 
     const userTurn: MessageTurn = {
       role: 'user',
@@ -85,7 +93,6 @@ export default function ChatPage() {
           }
           setTurns((prev) => [...prev, aiTurn])
           setStreamingContent('')
-          // Update conversation turn count
           setConversations((prev) =>
             prev.map((c) =>
               c.conversation_id === activeId
@@ -94,19 +101,22 @@ export default function ChatPage() {
             )
           )
         }
-      })
-    } catch {
-      setTurns((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: 'Sorry, something went wrong. Please try again.',
-          timestamp: new Date().toISOString(),
-        },
-      ])
+      }, ctrl.signal)
+    } catch (err) {
+      if (!ctrl.signal.aborted) {
+        setTurns((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: 'Sorry, something went wrong. Please try again.',
+            timestamp: new Date().toISOString(),
+          },
+        ])
+      }
     } finally {
       setIsStreaming(false)
       setStreamingContent('')
+      abortRef.current = null
     }
   }, [activeId, isStreaming])
 
@@ -114,7 +124,7 @@ export default function ChatPage() {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center h-screen" style={{ color: 'var(--text-muted)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--text-muted)' }}>
         Loading…
       </div>
     )
@@ -141,19 +151,29 @@ export default function ChatPage() {
             streamingContent={streamingContent}
             isStreaming={isStreaming}
             onSend={handleSend}
+            onStop={handleStop}
             conversationTitle={activeConversation?.title}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center h-full gap-3" style={{ color: 'var(--text-muted)' }}>
-            <span className="text-5xl">✈</span>
-            <p className="text-sm font-medium" style={{ color: 'var(--navy)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: 'var(--text-muted)' }}>
+            <span style={{ fontSize: 48 }}>✈</span>
+            <p style={{ fontSize: 'var(--text-md)', fontWeight: 500, color: 'var(--text-secondary)' }}>
               How can I help plan your trip?
             </p>
-            <p className="text-xs">Select a conversation or start a new one.</p>
+            <p style={{ fontSize: 'var(--text-sm)' }}>Select a conversation or start a new one.</p>
             <button
               onClick={handleNewConversation}
-              className="mt-2 px-4 py-2 text-sm font-medium text-white"
-              style={{ background: 'var(--navy)' }}
+              style={{
+                marginTop: 8,
+                padding: '8px 20px',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 600,
+                color: 'white',
+                background: 'var(--brand)',
+                border: 'none',
+                borderRadius: 'var(--r-md)',
+                cursor: 'pointer',
+              }}
             >
               + Start New Chat
             </button>

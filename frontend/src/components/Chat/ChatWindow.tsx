@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import MessageBubble from './MessageBubble'
-import ChatInput from './ChatInput'
+import InputBar from '@/components/InputBar'
 import type { MessageTurn } from '@/types/nva'
 
 interface ChatWindowProps {
@@ -8,6 +8,7 @@ interface ChatWindowProps {
   streamingContent: string
   isStreaming: boolean
   onSend: (content: string) => void
+  onStop?: () => void
   conversationTitle?: string
 }
 
@@ -16,6 +17,7 @@ export default function ChatWindow({
   streamingContent,
   isStreaming,
   onSend,
+  onStop,
   conversationTitle,
 }: ChatWindowProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -27,51 +29,55 @@ export default function ChatWindow({
   const isEmpty = turns.length === 0 && !isStreaming
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Conversation header */}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-surface)' }}>
+      {/* Conversation title bar */}
       {conversationTitle && (
-        <div
-          className="px-4 py-2 flex-shrink-0 text-sm font-medium"
-          style={{ borderBottom: '1px solid var(--border)', color: 'var(--navy)' }}
-        >
+        <div style={{
+          padding: '8px 16px',
+          flexShrink: 0,
+          fontSize: 'var(--text-sm)',
+          fontWeight: 500,
+          color: 'var(--text-primary)',
+          borderBottom: '1px solid var(--border)',
+          background: 'var(--bg-surface)',
+        }}>
           {conversationTitle}
         </div>
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto py-4">
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 0' }}>
         {isEmpty ? (
-          <div className="flex flex-col items-center justify-center h-full gap-3" style={{ color: 'var(--text-muted)' }}>
-            <span className="text-5xl">✈</span>
-            <p className="text-sm font-medium" style={{ color: 'var(--navy)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: 'var(--text-muted)' }}>
+            <span style={{ fontSize: 48 }}>✈</span>
+            <p style={{ fontSize: 'var(--text-md)', fontWeight: 500, color: 'var(--text-secondary)' }}>
               How can I help plan your trip?
             </p>
-            <p className="text-xs">Ask me to search flights, check policies, or book travel.</p>
+            <p style={{ fontSize: 'var(--text-sm)' }}>Ask me to search flights, check policies, or book travel.</p>
           </div>
         ) : (
           <>
             {turns.map((turn, i) => (
               <MessageBubble key={i} turn={turn} />
             ))}
-            {/* Streaming assistant message */}
             {isStreaming && streamingContent && (
               <MessageBubble
-                turn={{
-                  role: 'assistant',
-                  content: streamingContent,
-                  timestamp: new Date().toISOString(),
-                }}
+                turn={{ role: 'assistant', content: streamingContent, timestamp: new Date().toISOString() }}
                 isStreaming
               />
             )}
-            {/* Typing indicator when streaming but no tokens yet */}
             {isStreaming && !streamingContent && (
-              <div className="flex px-4 py-3 gap-1.5">
+              <div style={{ display: 'flex', padding: '12px 16px', gap: 6 }}>
                 {[0, 1, 2].map((i) => (
                   <span
                     key={i}
-                    className="w-2 h-2 rounded-full animate-bounce"
-                    style={{ background: 'var(--navy)', animationDelay: `${i * 0.15}s` }}
+                    style={{
+                      width: 8, height: 8, borderRadius: '50%',
+                      background: 'var(--brand)',
+                      display: 'inline-block',
+                      animation: 'bounce 0.8s infinite',
+                      animationDelay: `${i * 0.15}s`,
+                    }}
                   />
                 ))}
               </div>
@@ -81,7 +87,7 @@ export default function ChatWindow({
         <div ref={bottomRef} />
       </div>
 
-      <ChatInput onSend={onSend} disabled={isStreaming} />
+      <InputBar onSend={onSend} onStop={onStop} isStreaming={isStreaming} />
     </div>
   )
 }

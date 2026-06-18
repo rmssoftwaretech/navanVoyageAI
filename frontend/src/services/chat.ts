@@ -20,7 +20,8 @@ export async function getConversationTurns(conversationId: string): Promise<Mess
 export async function sendMessage(
   conversationId: string,
   content: string,
-  onEvent: (event: AgentEvent) => void
+  onEvent: (event: AgentEvent) => void,
+  signal?: AbortSignal
 ): Promise<void> {
   const response = await fetch('/api/chat/send', {
     method: 'POST',
@@ -29,6 +30,7 @@ export async function sendMessage(
       Authorization: `Bearer ${getToken()}`,
     },
     body: JSON.stringify({ conversation_id: conversationId, content }),
+    signal,
   })
 
   if (!response.ok) {
@@ -39,24 +41,29 @@ export async function sendMessage(
   const decoder = new TextDecoder()
   let buffer = ''
 
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
 
-    buffer += decoder.decode(value, { stream: true })
-    const lines = buffer.split('\n')
-    buffer = lines.pop() ?? ''
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
 
-    for (const line of lines) {
-      if (!line.startsWith('data: ')) continue
-      const raw = line.slice(6).trim()
-      if (!raw || raw === '[DONE]') continue
-      try {
-        const event: AgentEvent = JSON.parse(raw)
-        onEvent(event)
-      } catch {
-        // malformed line — skip
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        const raw = line.slice(6).trim()
+        if (!raw || raw === '[DONE]') continue
+        try {
+          const event: AgentEvent = JSON.parse(raw)
+          onEvent({ ...event, ts: Date.now() })
+        } catch {
+          // malformed line — skip
+        }
       }
     }
+  } catch (err) {
+    if (signal?.aborted) return
+    throw err
   }
 }

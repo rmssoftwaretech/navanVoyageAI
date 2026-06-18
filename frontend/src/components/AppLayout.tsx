@@ -28,10 +28,10 @@ export default function AppLayout({
   inspector,
 }: AppLayoutProps) {
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: 'var(--bg-page)' }}>
       <AppHeader onAdminOpen={onAdminOpen} username={user.display_name || user.username} />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* Left sidebar */}
         <ConversationSidebar
           conversations={conversations}
@@ -41,36 +41,52 @@ export default function AppLayout({
         />
 
         {/* Main chat area */}
-        <main className="flex-1 flex flex-col overflow-hidden bg-white">
+        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-surface)' }}>
           {children}
         </main>
 
         {/* Right inspector panel */}
         {inspectorOpen && (
           <aside
-            className="flex flex-col flex-shrink-0 overflow-hidden"
             style={{
-              width: 320,
+              width: 380,
+              flexShrink: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
               borderLeft: '1px solid var(--border)',
-              background: 'var(--surface)',
+              background: 'var(--bg-surface)',
             }}
           >
             <div
-              className="flex items-center justify-between px-3 py-2 flex-shrink-0"
-              style={{ borderBottom: '1px solid var(--border)' }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '8px 12px',
+                flexShrink: 0,
+                borderBottom: '1px solid var(--border)',
+                background: 'var(--bg-page)',
+              }}
             >
-              <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--navy)' }}>
-                🔌 MCP Tools
+              <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--brand)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                🔌 MCP Inspector
               </span>
               <button
                 onClick={onInspectorToggle}
-                className="text-xs hover:opacity-60"
-                style={{ color: 'var(--text-muted)' }}
+                style={{
+                  fontSize: 12,
+                  color: 'var(--text-muted)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '2px 4px',
+                }}
               >
                 ✕
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto">{inspector}</div>
+            <div style={{ flex: 1, overflow: 'auto' }}>{inspector}</div>
           </aside>
         )}
 
@@ -78,15 +94,23 @@ export default function AppLayout({
         {!inspectorOpen && (
           <button
             onClick={onInspectorToggle}
-            className="flex-shrink-0 flex items-center justify-center w-6 text-xs font-medium writing-vertical"
+            title="Show MCP Inspector"
             style={{
-              background: 'var(--surface)',
+              flexShrink: 0,
+              width: 22,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'var(--bg-surface)',
               borderLeft: '1px solid var(--border)',
               color: 'var(--text-muted)',
+              fontSize: 'var(--text-xs)',
+              fontWeight: 500,
               writingMode: 'vertical-rl',
               letterSpacing: '0.05em',
+              border: 'none',
+              cursor: 'pointer',
             }}
-            title="Show MCP Inspector"
           >
             🔌 MCP
           </button>

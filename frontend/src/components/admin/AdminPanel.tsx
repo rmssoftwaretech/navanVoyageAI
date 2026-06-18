@@ -3,6 +3,7 @@ import type { User } from '@/types/nva'
 import ModelSelectionTab from './ModelSelectionTab'
 import AuditLogTab from './AuditLogTab'
 import BillingTab from './BillingTab'
+import EvalMetricsTab from './EvalMetricsTab'
 
 const TABS = [
   { id: 'models',       label: 'Model Selection' },
@@ -135,9 +136,6 @@ function TabContent({ tab }: { tab: TabId }) {
 
 
 
-function EvalMetricsTab() {
-  return <StubTab label="Eval Metrics" icon="📊" story="NVA-15" />
-}
 
 function ObservabilityTab() {
   return <StubTab label="Observability" icon="🔭" story="NVA-16" />

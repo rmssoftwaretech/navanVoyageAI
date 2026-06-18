@@ -20,7 +20,7 @@ def test_context_block_empty():
 
 def test_context_block_with_entities():
     ctx = {
-        "entities": {"origin": "JFK", "destinations": ["CDG"], "budget_usd": 800},
+        "entities": {"origin": "JFK", "destination": "CDG", "max_price": 800},
         "preferences": {"seat": "window"},
     }
     block = build_context_block(ctx, [])

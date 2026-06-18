@@ -80,7 +80,16 @@ class OrchestratorAgent(BaseAgent):
             db=db,
         )
 
-        context_block = build_context_block(session_context, recent_turns)
+        # Load long-term memory for this user
+        ltm_block = ""
+        try:
+            from backend.application.agent.memory import MemoryRetriever
+            memories = await MemoryRetriever().load(user, db)
+            ltm_block = MemoryRetriever().format_block(memories)
+        except Exception as exc:
+            log.warning("LTM load failed: %s", exc)
+
+        context_block = build_context_block(session_context, recent_turns, ltm_block=ltm_block)
 
         # Intent classification
         agent_names: list[str] = []
@@ -163,7 +172,7 @@ class OrchestratorAgent(BaseAgent):
         # Short-term memory: extract entities from window, persist to session_context
         if assembled:
             try:
-                from backend.application.agent.memory import ShortTermMemory
+                from backend.application.agent.memory import MemoryUpdater, ShortTermMemory
                 all_turns = recent_turns + [
                     {"role": "user", "content": content},
                     {"role": "assistant", "content": assembled},
@@ -174,8 +183,12 @@ class OrchestratorAgent(BaseAgent):
                     session_context.get("entities", {}),
                     db,
                 )
+                # Long-term memory: fire-and-forget durable fact extraction
+                asyncio.create_task(
+                    MemoryUpdater().update(user, conversation_id, content, assembled, db)
+                )
             except Exception as exc:
-                log.warning("STM extraction failed: %s", exc)
+                log.warning("Memory update failed: %s", exc)
 
             # Audit log
             await db["nva_audit_log"].insert_one({

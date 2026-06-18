@@ -115,3 +115,128 @@ class ShortTermMemory:
                 log.warning("STM DB write failed: %s", exc)
 
         return merged
+
+
+# ── Long-Term Memory ──────────────────────────────────────────────────────────
+
+_LTM_EXTRACT_PROMPT = """You are extracting durable long-term facts about a corporate traveller from a conversation.
+Return ONLY valid JSON array (no markdown). Each item is a memory entry:
+[
+  {
+    "category": "travel_preferences|frequent_routes|loyalty_programs|dietary|general",
+    "fact": "concise factual statement about the user, max 100 chars",
+    "confidence": 0.9
+  }
+]
+Only include facts that are likely to be useful in future conversations.
+Ignore one-off requests. Return [] if nothing durable was learned.
+"""
+
+_CATEGORIES = {"travel_preferences", "frequent_routes", "loyalty_programs", "dietary", "general"}
+
+
+class MemoryRetriever:
+    """Loads long-term memory for a user from nva_user_memory."""
+
+    async def load(self, username: str, db: Any) -> list[dict]:
+        if db is None:
+            return []
+        try:
+            cursor = db["nva_user_memory"].find(
+                {"user": username},
+                {"_id": 0},
+                sort=[("updated_at", -1)],
+                limit=50,
+            )
+            return await cursor.to_list(length=50)
+        except Exception as exc:
+            log.warning("LTM load failed: %s", exc)
+            return []
+
+    def format_block(self, memories: list[dict]) -> str:
+        if not memories:
+            return ""
+        by_category: dict[str, list[str]] = {}
+        for m in memories:
+            cat = m.get("category", "general")
+            by_category.setdefault(cat, []).append(m.get("fact", ""))
+
+        lines = ["=== USER LONG-TERM MEMORY ==="]
+        for cat, facts in by_category.items():
+            lines.append(f"\n[{cat.upper().replace('_', ' ')}]")
+            for f in facts:
+                lines.append(f"- {f}")
+        return "\n".join(lines)
+
+
+class MemoryUpdater:
+    """Extracts durable facts from a turn and upserts into nva_user_memory."""
+
+    def __init__(self) -> None:
+        cfg = get_agent_config("orchestrator")
+        self._cfg = cfg
+        self._client = _azure_client()
+
+    async def update(
+        self,
+        username: str,
+        conversation_id: str,
+        user_message: str,
+        ai_response: str,
+        db: Any,
+    ) -> None:
+        if db is None:
+            return
+
+        deployment = self._cfg.get("deployment", "gpt-4o")
+        user_prompt = (
+            f"User message: {user_message[:500]}\n\n"
+            f"AI response: {ai_response[:500]}"
+        )
+        try:
+            resp = await self._client.chat.completions.create(
+                model=deployment,
+                messages=[
+                    {"role": "system", "content": _LTM_EXTRACT_PROMPT},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.0,
+                max_tokens=512,
+            )
+            raw = resp.choices[0].message.content or "[]"
+            raw = re.sub(r"```(?:json)?\s*|\s*```", "", raw).strip()
+            entries: list[dict] = json.loads(raw)
+        except Exception as exc:
+            log.warning("LTM extraction failed: %s", exc)
+            return
+
+        if not isinstance(entries, list):
+            return
+
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).isoformat()
+
+        for entry in entries:
+            category = entry.get("category", "general")
+            if category not in _CATEGORIES:
+                category = "general"
+            fact = str(entry.get("fact", "")).strip()
+            if not fact:
+                continue
+            confidence = float(entry.get("confidence", 0.8))
+
+            try:
+                await db["nva_user_memory"].update_one(
+                    {"user": username, "category": category, "fact": fact},
+                    {"$set": {
+                        "user": username,
+                        "category": category,
+                        "fact": fact,
+                        "confidence": confidence,
+                        "conversation_id": conversation_id,
+                        "updated_at": now,
+                    }, "$setOnInsert": {"created_at": now}},
+                    upsert=True,
+                )
+            except Exception as exc:
+                log.warning("LTM upsert failed for fact '%s': %s", fact[:40], exc)

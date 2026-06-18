@@ -9,8 +9,13 @@ def sse(event: dict[str, Any]) -> str:
     return f"data: {json.dumps(event)}\n\n"
 
 
-def build_context_block(session_context: dict, recent_turns: list[dict], max_chars: int = 2000) -> str:
-    """Format session_context + recent turns into a system prompt block."""
+def build_context_block(
+    session_context: dict,
+    recent_turns: list[dict],
+    max_chars: int = 2000,
+    ltm_block: str = "",
+) -> str:
+    """Format session_context + recent turns + long-term memory into a system prompt block."""
     ctx = session_context or {}
     prefs = ctx.get("preferences", {})
     ents = ctx.get("entities", {})
@@ -26,12 +31,15 @@ def build_context_block(session_context: dict, recent_turns: list[dict], max_cha
 
 === USER CONTEXT (this session) ===
 Origin: {ents.get('origin', 'not stated')}
-Destinations: {', '.join(ents.get('destinations', [])) or 'not stated'}
-Travel dates: {ents.get('travel_dates', 'not stated')}
+Destination: {ents.get('destination', 'not stated')}
+Depart date: {ents.get('depart_date', 'not stated')}
 Cabin preference: {ents.get('cabin_class', 'not stated')}
-Budget: {'$' + str(ents['budget_usd']) if ents.get('budget_usd') else 'not stated'}
+Budget: {'$' + str(ents['max_price']) if ents.get('max_price') else 'not stated'}
 Preferences: {json.dumps(prefs) if prefs else 'none stated'}
 """
+    if ltm_block:
+        block += f"\n{ltm_block}\n"
+
     if len(block) > max_chars:
         block = block[:max_chars] + "\n[... truncated ...]"
     return block

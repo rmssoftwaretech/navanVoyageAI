@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { User } from '@/types/nva'
+import ModelSelectionTab from './ModelSelectionTab'
 
 const TABS = [
   { id: 'models',       label: 'Model Selection' },
@@ -128,11 +129,7 @@ function TabContent({ tab }: { tab: TabId }) {
   }
 }
 
-/* ── Stub tab bodies — replaced in NVA-05 through NVA-20 ── */
-
-function ModelSelectionTab() {
-  return <StubTab label="Model Selection" icon="🤖" story="NVA-05" />
-}
+/* ── Stub tab bodies — replaced in NVA-06 through NVA-20 ── */
 
 function AuditLogTab() {
   return <StubTab label="Audit Log" icon="📋" story="NVA-06" />

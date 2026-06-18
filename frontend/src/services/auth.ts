@@ -37,6 +37,23 @@ export function logout(): void {
   window.location.href = '/login'
 }
 
+// Shared axios instance with base URL and auth interceptor
+export const apiClient = axios.create({ baseURL: '/api' })
+
+apiClient.interceptors.request.use((config) => {
+  const token = getToken()
+  if (token && config.headers) config.headers.Authorization = `Bearer ${token}`
+  return config
+})
+
+apiClient.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) { clearToken(); window.location.href = '/login' }
+    return Promise.reject(err)
+  }
+)
+
 axios.interceptors.request.use((config) => {
   const token = getToken()
   if (token && config.headers) {

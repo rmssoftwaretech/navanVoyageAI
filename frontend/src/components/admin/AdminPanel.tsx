@@ -4,6 +4,7 @@ import ModelSelectionTab from './ModelSelectionTab'
 import AuditLogTab from './AuditLogTab'
 import BillingTab from './BillingTab'
 import EvalMetricsTab from './EvalMetricsTab'
+import ObservabilityTab from './ObservabilityTab'
 
 const TABS = [
   { id: 'models',       label: 'Model Selection' },
@@ -137,9 +138,6 @@ function TabContent({ tab }: { tab: TabId }) {
 
 
 
-function ObservabilityTab() {
-  return <StubTab label="Observability" icon="🔭" story="NVA-16" />
-}
 
 function ChatHistoryTab() {
   return <StubTab label="Chat History" icon="💬" story="NVA-20" />

@@ -20,13 +20,9 @@ export function authInterceptor(req: HttpRequest<unknown>, next: HttpHandlerFn):
 export class AuthService {
   constructor(private http: HttpClient) {}
 
-  login(username: string, password: string): Observable<{ access_token: string }> {
-    const form = new URLSearchParams()
-    form.set('username', username)
-    form.set('password', password)
-    return this.http.post<{ access_token: string }>('/api/auth/token', form.toString(), {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    }).pipe(tap(({ access_token }) => localStorage.setItem(TOKEN_KEY, access_token)))
+  login(username: string, password: string): Observable<{ token: string }> {
+    return this.http.post<{ token: string }>('/api/auth/login', { username, password })
+      .pipe(tap(({ token }) => localStorage.setItem(TOKEN_KEY, token)))
   }
 
   logout(): void {

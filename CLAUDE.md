@@ -10,7 +10,7 @@
 | Frontend (React Spectrum) | 5211 |
 | Frontend (Angular Material 3) | 4210 |
 | Backend (FastAPI) | 8100 |
-| MongoDB | 27117 |
+| MongoDB | Atlas — geminirag.saslfno.mongodb.net / navanVoyageAI |
 | nginx (main app entry) | 3010 |
 | Amadeus MCP server | 8101 |
 

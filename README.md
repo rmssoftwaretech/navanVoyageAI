@@ -122,7 +122,7 @@ python backend/db/seed.py
 | Frontend (Angular) | Angular 17+ · `@angular/material` (M3) |
 | Backend | FastAPI · Python 3.12 · Motor (async MongoDB) |
 | MCP | FastMCP (Amadeus wrapper) |
-| Database | MongoDB 7 (`nva_db`) |
+| Database | MongoDB Atlas (`navanVoyageAI` db on `geminirag.saslfno.mongodb.net`) |
 | Auth | JWT (HS256, local) |
 | Reverse proxy | nginx:alpine |
 | Container | Docker Compose |

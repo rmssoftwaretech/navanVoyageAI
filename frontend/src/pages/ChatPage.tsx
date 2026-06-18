@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import AppLayout from '@/components/AppLayout'
 import ChatWindow from '@/components/Chat/ChatWindow'
+import McpInspectorPanel from '@/components/McpInspectorPanel'
 import { getMe } from '@/services/auth'
 import { createConversation, getConversationTurns, getConversations, sendMessage } from '@/services/chat'
 import type { AgentEvent, Conversation, MessageTurn, User } from '@/types/nva'
@@ -130,22 +131,7 @@ export default function ChatPage() {
         inspectorOpen={inspectorOpen}
         onInspectorToggle={toggleInspector}
         inspector={
-          inspectorEvents.length === 0 ? (
-            <div className="p-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-              Tool calls will appear here during a conversation.
-            </div>
-          ) : (
-            <div className="flex flex-col divide-y divide-gray-100">
-              {inspectorEvents
-                .filter((e) => ['mcp_tool_call', 'mcp_tool_result', 'agent_start', 'agent_done'].includes(e.type))
-                .map((e, i) => (
-                  <div key={i} className="px-3 py-2 text-xs" style={{ color: 'var(--text)' }}>
-                    <span className="font-medium" style={{ color: 'var(--navy)' }}>{e.type}</span>
-                    {e.agent && <span className="ml-1" style={{ color: 'var(--text-muted)' }}>[{e.agent}]</span>}
-                  </div>
-                ))}
-            </div>
-          )
+          <McpInspectorPanel events={inspectorEvents} isStreaming={isStreaming} />
         }
       >
         {activeId ? (

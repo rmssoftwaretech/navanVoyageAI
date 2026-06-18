@@ -78,3 +78,20 @@ async def get_eval_scores(
         limit=limit,
     )
     return await cursor.to_list(length=limit)
+
+
+@router.get("/conversations")
+async def get_all_conversations(
+    limit: int = Query(50, ge=1, le=200),
+    _: dict = Depends(require_admin),
+) -> list[dict]:
+    db = await get_db()
+    if db is None:
+        return []
+    cursor = db["nva_conversations"].find(
+        {},
+        {"_id": 0},
+        sort=[("updated_at", -1)],
+        limit=limit,
+    )
+    return await cursor.to_list(length=limit)

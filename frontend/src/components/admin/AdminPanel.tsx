@@ -5,6 +5,7 @@ import AuditLogTab from './AuditLogTab'
 import BillingTab from './BillingTab'
 import EvalMetricsTab from './EvalMetricsTab'
 import ObservabilityTab from './ObservabilityTab'
+import ChatHistoryTab from './ChatHistoryTab'
 
 const TABS = [
   { id: 'models',       label: 'Model Selection' },
@@ -133,22 +134,6 @@ function TabContent({ tab }: { tab: TabId }) {
   }
 }
 
-/* ── Stub tab bodies — replaced in NVA-06 through NVA-20 ── */
 
 
 
-
-
-function ChatHistoryTab() {
-  return <StubTab label="Chat History" icon="💬" story="NVA-20" />
-}
-
-function StubTab({ label, icon, story }: { label: string; icon: string; story: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center h-full gap-3" style={{ color: 'var(--text-muted)' }}>
-      <span className="text-4xl">{icon}</span>
-      <p className="text-sm font-semibold" style={{ color: 'var(--navy)' }}>{label}</p>
-      <p className="text-xs">Coming soon — implemented in {story}</p>
-    </div>
-  )
-}

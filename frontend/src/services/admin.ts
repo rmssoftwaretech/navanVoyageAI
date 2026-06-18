@@ -37,3 +37,8 @@ export async function getEvalScores(limit = 200): Promise<unknown[]> {
   const { data } = await apiClient.get<unknown[]>(`/admin/eval-scores?limit=${limit}`)
   return data
 }
+
+export async function getAdminConversations(limit = 50): Promise<unknown[]> {
+  const { data } = await apiClient.get<unknown[]>(`/admin/conversations?limit=${limit}`)
+  return data
+}

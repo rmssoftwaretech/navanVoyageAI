@@ -34,6 +34,28 @@ services:
     networks:
       - nva-net
 
+  frontend-spectrum:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.frontend-spectrum
+    ports:
+      - "5211:80"
+    depends_on:
+      - backend
+    networks:
+      - nva-net
+
+  frontend-angular:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.frontend-angular
+    ports:
+      - "4210:80"
+    depends_on:
+      - backend
+    networks:
+      - nva-net
+
   nginx:
     image: nginx:alpine
     ports:

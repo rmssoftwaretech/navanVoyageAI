@@ -118,8 +118,8 @@ python backend/db/seed.py
 | Layer | Technology |
 |---|---|
 | Frontend (primary) | Vite 5 · React 18 · TypeScript · Tailwind CSS 3 |
-| Frontend (Spectrum) | Vite 5 · React 18 · `@adobe/react-spectrum` |
-| Frontend (Angular) | Angular 17+ · `@angular/material` (M3) |
+| Frontend (Spectrum) | Vite 5 · React 19 · `@react-spectrum/s2` (Spectrum 2) |
+| Frontend (Angular) | Angular 18 · `@angular/material` (M3) |
 | Backend | FastAPI · Python 3.12 · Motor (async MongoDB) |
 | MCP | FastMCP (Amadeus wrapper) |
 | Database | MongoDB Atlas (`navanVoyageAI` db on `geminirag.saslfno.mongodb.net`) |

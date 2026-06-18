@@ -1,0 +1,78 @@
+/* React Spectrum S2 base styles */
+@import '@react-spectrum/s2/page.css';
+
+/* Brand token overrides — navy/gold applied at root */
+:root {
+  --nva-navy: #1E3A5F;
+  --nva-gold: #D97706;
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #f8f9fa;
+}
+
+/* 3-column layout shell */
+.nva-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr 320px;
+  grid-template-rows: 48px 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.nva-header {
+  grid-column: 1 / -1;
+  background: var(--nva-navy);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  color: #fff;
+}
+
+.nva-sidebar {
+  border-right: 1px solid var(--spectrum-gray-200);
+  overflow-y: auto;
+  background: var(--spectrum-gray-50, #fafafa);
+}
+
+.nva-chat {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+}
+
+.nva-inspector {
+  border-left: 1px solid var(--spectrum-gray-200);
+  background: var(--spectrum-gray-50, #fafafa);
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.nva-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Login page */
+.nva-login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--nva-navy);
+}
+
+.nva-login-card {
+  background: #fff;
+  padding: 40px;
+  width: 360px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+}

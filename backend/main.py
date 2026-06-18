@@ -7,12 +7,17 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.main import api_router
+from backend.db.indexes import create_indexes
 from backend.db.mongo import close_db, get_db
+from backend.db.seed import seed_db
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await get_db()
+    db = await get_db()
+    if db is not None:
+        await create_indexes(db)
+        await seed_db(db)
     yield
     close_db()
 

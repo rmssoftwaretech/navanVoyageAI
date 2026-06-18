@@ -1,0 +1,52 @@
+{
+  "orchestrator": {
+    "model": "azure-openai",
+    "deployment": "gpt-4o",
+    "temperature": 0.3,
+    "max_tokens": 2048,
+    "streaming": true,
+    "short_term_memory": {
+      "enabled": true,
+      "window_turns": 5,
+      "max_chars": 2000
+    },
+    "tot_enabled": false
+  },
+  "search": {
+    "model": "azure-openai",
+    "deployment": "gpt-4o",
+    "temperature": 0.1,
+    "max_tokens": 1024,
+    "streaming": false
+  },
+  "policy": {
+    "model": "azure-openai",
+    "deployment": "gpt-4o",
+    "temperature": 0.0,
+    "max_tokens": 512,
+    "streaming": false
+  },
+  "destination": {
+    "model": "azure-openai",
+    "deployment": "gpt-4o",
+    "temperature": 0.5,
+    "max_tokens": 1024,
+    "streaming": false
+  },
+  "booking": {
+    "model": "azure-openai",
+    "deployment": "gpt-4o",
+    "temperature": 0.1,
+    "max_tokens": 512,
+    "streaming": false
+  },
+  "judge": {
+    "model": "azure-openai",
+    "deployment": "gpt-4o",
+    "temperature": 0.0,
+    "max_tokens": 1024,
+    "streaming": false,
+    "use_claude_opus": false,
+    "eval_threshold": 0.75
+  }
+}

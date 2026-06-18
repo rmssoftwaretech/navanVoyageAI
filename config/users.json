@@ -1,0 +1,14 @@
+[
+  {
+    "username": "admin",
+    "role": "admin",
+    "display_name": "Travel Admin",
+    "email": "admin@navanvoyage.demo"
+  },
+  {
+    "username": "traveller",
+    "role": "traveller",
+    "display_name": "Demo Traveller",
+    "email": "traveller@navanvoyage.demo"
+  }
+]

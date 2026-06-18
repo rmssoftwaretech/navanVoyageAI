@@ -1,0 +1,75 @@
+[
+  {
+    "policy_id": "POL-001",
+    "name": "Standard Domestic Policy",
+    "description": "Policy for domestic US travel",
+    "flight": {
+      "allowed_classes": ["Economy", "Economy Plus"],
+      "max_advance_booking_days": 90,
+      "min_advance_booking_days": 7,
+      "max_one_way_usd": 500,
+      "max_roundtrip_usd": 900,
+      "preferred_airlines": ["United", "Delta", "American", "Southwest"]
+    },
+    "hotel": {
+      "max_nightly_rate_usd": 200,
+      "allowed_tiers": ["2-star", "3-star"],
+      "preferred_chains": ["Marriott", "Hilton", "Hyatt"]
+    },
+    "car_rental": {
+      "allowed_classes": ["Economy", "Compact", "Intermediate"],
+      "max_daily_rate_usd": 75
+    },
+    "meal_per_diem_usd": 60,
+    "applies_to": "all"
+  },
+  {
+    "policy_id": "POL-002",
+    "name": "International Travel Policy",
+    "description": "Policy for international travel (transatlantic / transpacific)",
+    "flight": {
+      "allowed_classes": ["Economy", "Economy Plus", "Business"],
+      "max_advance_booking_days": 120,
+      "min_advance_booking_days": 14,
+      "max_one_way_usd": 1500,
+      "max_roundtrip_usd": 2800,
+      "business_eligible_hours": 8,
+      "preferred_airlines": ["Air France", "Lufthansa", "United", "Delta", "British Airways"]
+    },
+    "hotel": {
+      "max_nightly_rate_usd": 350,
+      "allowed_tiers": ["3-star", "4-star"],
+      "preferred_chains": ["Marriott", "Hilton", "InterContinental"]
+    },
+    "car_rental": {
+      "allowed_classes": ["Economy", "Compact", "Intermediate", "Standard"],
+      "max_daily_rate_usd": 100
+    },
+    "meal_per_diem_usd": 100,
+    "applies_to": "international"
+  },
+  {
+    "policy_id": "POL-003",
+    "name": "Executive Travel Policy",
+    "description": "Policy for VP-level and above",
+    "flight": {
+      "allowed_classes": ["Economy Plus", "Business", "First"],
+      "max_advance_booking_days": 180,
+      "min_advance_booking_days": 3,
+      "max_one_way_usd": 5000,
+      "max_roundtrip_usd": 9000,
+      "preferred_airlines": []
+    },
+    "hotel": {
+      "max_nightly_rate_usd": 600,
+      "allowed_tiers": ["4-star", "5-star"],
+      "preferred_chains": []
+    },
+    "car_rental": {
+      "allowed_classes": ["Standard", "Full-size", "Luxury"],
+      "max_daily_rate_usd": 200
+    },
+    "meal_per_diem_usd": 150,
+    "applies_to": "executive"
+  }
+]

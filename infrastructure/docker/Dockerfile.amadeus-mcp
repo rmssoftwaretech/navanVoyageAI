@@ -1,0 +1,11 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir fastmcp httpx amadeus certifi
+
+COPY amadeus-mcp/ ./amadeus-mcp/
+
+ENV PYTHONPATH=/app
+
+CMD ["python", "-m", "amadeus-mcp.server"]

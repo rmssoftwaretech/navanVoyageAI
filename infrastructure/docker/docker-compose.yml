@@ -1,0 +1,51 @@
+services:
+  frontend:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.frontend
+    ports:
+      - "5210:80"
+    depends_on:
+      - backend
+    networks:
+      - nva-net
+
+  backend:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.backend
+    ports:
+      - "8100:8000"
+    env_file:
+      - ../../.env
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - nva-net
+
+  amadeus-mcp:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.amadeus-mcp
+    ports:
+      - "8101:8101"
+    env_file:
+      - ../../.env
+    networks:
+      - nva-net
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "3010:80"
+    volumes:
+      - ../nginx/proxy.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - nva-net
+
+networks:
+  nva-net:
+    driver: bridge

@@ -154,6 +154,16 @@ class OrchestratorAgent(BaseAgent):
                 "timestamp": now,
             })
 
+        # Fire-and-forget JudgeAgent evaluation (non-blocking)
+        if assembled:
+            try:
+                from backend.application.agent.judge_agent import JudgeAgent
+                asyncio.create_task(
+                    JudgeAgent().evaluate(conversation_id, content, assembled, db)
+                )
+            except Exception as exc:
+                log.warning("JudgeAgent task creation failed: %s", exc)
+
         yield sse({"type": "agent_done", "agent": "orchestrator"})
         yield sse({"type": "done"})
 

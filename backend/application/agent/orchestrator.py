@@ -160,6 +160,23 @@ class OrchestratorAgent(BaseAgent):
                 update["$set"]["title"] = content[:60]
             await db["nva_conversations"].update_one({"conversation_id": conversation_id}, update)
 
+        # Short-term memory: extract entities from window, persist to session_context
+        if assembled:
+            try:
+                from backend.application.agent.memory import ShortTermMemory
+                all_turns = recent_turns + [
+                    {"role": "user", "content": content},
+                    {"role": "assistant", "content": assembled},
+                ]
+                await ShortTermMemory().extract_and_persist(
+                    conversation_id,
+                    all_turns,
+                    session_context.get("entities", {}),
+                    db,
+                )
+            except Exception as exc:
+                log.warning("STM extraction failed: %s", exc)
+
             # Audit log
             await db["nva_audit_log"].insert_one({
                 "log_id": str(uuid.uuid4()),

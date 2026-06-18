@@ -12,7 +12,7 @@ import { MatIconModule } from '@angular/material/icon'
   imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule],
   template: `
     <div class="chat-input-area">
-      <mat-form-field appearance="outlined" style="flex: 1;">
+      <mat-form-field appearance="outline" style="flex: 1;">
         <mat-label>Message</mat-label>
         <textarea
           matInput

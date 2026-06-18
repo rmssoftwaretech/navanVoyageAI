@@ -88,15 +88,15 @@ import { AgentBadgeComponent } from '../../components/agent-badge/agent-badge.co
           <mat-card-title style="color: var(--nva-navy);">M3 Form Fields</mat-card-title>
         </mat-card-header>
         <mat-card-content style="padding-top: 16px; display: flex; gap: 16px; flex-wrap: wrap;">
-          <mat-form-field appearance="outlined">
+          <mat-form-field appearance="outline">
             <mat-label>Destination</mat-label>
             <input matInput placeholder="e.g. Tokyo, Japan" />
           </mat-form-field>
-          <mat-form-field appearance="outlined">
+          <mat-form-field appearance="outline">
             <mat-label>Travel Date</mat-label>
             <input matInput type="date" />
           </mat-form-field>
-          <mat-form-field appearance="outlined">
+          <mat-form-field appearance="outline">
             <mat-label>Max Budget (USD)</mat-label>
             <input matInput type="number" placeholder="800" />
             <span matTextPrefix>$&nbsp;</span>

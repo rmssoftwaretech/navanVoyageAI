@@ -39,12 +39,12 @@ import { AuthService } from '../../services/auth.service'
 
           <!-- Form -->
           <form (ngSubmit)="handleSubmit()">
-            <mat-form-field appearance="outlined" style="width: 100%; margin-bottom: 8px;">
+            <mat-form-field appearance="outline" style="width: 100%; margin-bottom: 8px;">
               <mat-label>Username</mat-label>
               <input matInput [(ngModel)]="username" name="username" required autocomplete="username" />
             </mat-form-field>
 
-            <mat-form-field appearance="outlined" style="width: 100%; margin-bottom: 20px;">
+            <mat-form-field appearance="outline" style="width: 100%; margin-bottom: 20px;">
               <mat-label>Password</mat-label>
               <input matInput [(ngModel)]="password" name="password" type="password" required autocomplete="current-password" />
             </mat-form-field>

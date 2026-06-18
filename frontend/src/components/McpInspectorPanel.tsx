@@ -1,4 +1,5 @@
 import ToolCallCard from './Chat/ToolCallCard'
+import ToTReasoningCard from './Chat/ToTReasoningCard'
 import TurnSummaryBadge from './Chat/TurnSummaryBadge'
 import type { AgentEvent } from '@/types/nva'
 
@@ -27,8 +28,12 @@ export default function McpInspectorPanel({ events, isStreaming }: McpInspectorP
     }
   }
 
+  const totEvents = events.filter((e) =>
+    ['tot_start', 'tot_branch', 'tot_evaluate', 'tot_selected', 'tot_error'].includes(e.type)
+  )
+
   const hasActivity = events.some((e) =>
-    ['agent_start', 'mcp_tool_call', 'mcp_tool_result'].includes(e.type)
+    ['agent_start', 'mcp_tool_call', 'mcp_tool_result', 'tot_start'].includes(e.type)
   )
 
   if (!hasActivity && !isStreaming) {
@@ -54,6 +59,9 @@ export default function McpInspectorPanel({ events, isStreaming }: McpInspectorP
           Agents running…
         </div>
       )}
+
+      {/* Tree of Thought reasoning card */}
+      {totEvents.length > 0 && <ToTReasoningCard events={totEvents} />}
 
       {/* Tool call cards */}
       {toolCalls.map(({ call, result }, i) => (

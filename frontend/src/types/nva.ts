@@ -27,12 +27,21 @@ export type AgentType = 'search' | 'policy' | 'destination' | 'booking' | 'judge
 
 export interface AgentEvent {
   type: 'agent_start' | 'token' | 'agent_done' | 'mcp_tool_call' | 'mcp_tool_result' | 'done' | 'error'
+      | 'tot_start' | 'tot_branch' | 'tot_evaluate' | 'tot_selected' | 'tot_error'
   agent?: AgentType
   data?: string
   tool?: string
   input?: unknown
   output?: unknown
   latency_ms?: number
+  // ToT fields
+  branches?: number
+  index?: number
+  angle?: string
+  content?: string
+  score?: number
+  rationale?: string
+  error?: string
 }
 
 export interface LoginResponse {

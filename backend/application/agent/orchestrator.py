@@ -107,9 +107,31 @@ class OrchestratorAgent(BaseAgent):
                     yield sse(mcp_event)
                 yield sse({"type": "agent_done", "agent": name})
 
+        # Tree of Thought (optional — gated by config + complexity)
+        tot_context: str = ""
+        if self._cfg.get("tot_enabled", False):
+            try:
+                from backend.application.agent.tot_strategy import _is_complex, run_tot
+                if _is_complex(content):
+                    results_block = "\n\n".join(
+                        f"[{n.upper()}]\n{r.content}" if r.success and r.content else f"[{n.upper()}]\n(no result)"
+                        for n, r in sub_results.items()
+                    ) or "(no sub-agent results)"
+                    async for tot_event in run_tot(content, results_block):
+                        yield tot_event
+                        # Capture the winning branch to inject into aggregation
+                        if '"type": "tot_selected"' in tot_event:
+                            try:
+                                d = json.loads(tot_event[6:])
+                                tot_context = d.get("content", "")
+                            except Exception:
+                                pass
+            except Exception as exc:
+                log.warning("ToT pipeline failed: %s", exc)
+
         # Aggregate + stream tokens
         assembled = ""
-        async for token_event in self._aggregate_stream(content, context_block, sub_results):
+        async for token_event in self._aggregate_stream(content, context_block, sub_results, tot_context):
             if '"type": "token"' in token_event:
                 try:
                     data = json.loads(token_event[6:])  # strip "data: "
@@ -207,12 +229,16 @@ class OrchestratorAgent(BaseAgent):
         message: str,
         context_block: str,
         sub_results: dict[str, AgentResult],
+        tot_context: str = "",
     ) -> AsyncGenerator[str, None]:
         results_block = "\n\n".join(
             f"[{name.upper()} AGENT]\n{r.content}" if r.success and r.content
             else f"[{name.upper()} AGENT]\n(no result)"
             for name, r in sub_results.items()
         ) or "(no sub-agents called — responding directly)"
+
+        if tot_context:
+            results_block = f"[TREE OF THOUGHT — SELECTED REASONING]\n{tot_context}\n\n{results_block}"
 
         system = AGGREGATE_PROMPT.format(
             context_block=context_block,

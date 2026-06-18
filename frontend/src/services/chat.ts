@@ -2,6 +2,16 @@ import axios from 'axios'
 import { getToken } from './auth'
 import type { AgentEvent, Conversation, MessageTurn } from '@/types/nva'
 
+export async function getConversationEval(conversationId: string): Promise<Record<string, unknown>> {
+  const { data } = await axios.get<Record<string, unknown>>(`/api/chat/conversations/${conversationId}/eval`)
+  return data
+}
+
+export async function getMcpInfo(): Promise<Record<string, unknown>> {
+  const { data } = await axios.get<Record<string, unknown>>('/api/chat/mcp/info')
+  return data
+}
+
 export async function getConversations(): Promise<Conversation[]> {
   const { data } = await axios.get<Conversation[]>('/api/chat/conversations')
   return data

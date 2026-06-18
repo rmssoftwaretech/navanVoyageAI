@@ -9,6 +9,7 @@ interface ChatWindowProps {
   isStreaming: boolean
   onSend: (content: string) => void
   onStop?: () => void
+  onRetry?: (content: string) => void
   conversationTitle?: string
 }
 
@@ -18,6 +19,7 @@ export default function ChatWindow({
   isStreaming,
   onSend,
   onStop,
+  onRetry,
   conversationTitle,
 }: ChatWindowProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -58,7 +60,7 @@ export default function ChatWindow({
         ) : (
           <>
             {turns.map((turn, i) => (
-              <MessageBubble key={i} turn={turn} />
+              <MessageBubble key={i} turn={turn} onRetry={turn.role === 'user' && !isStreaming ? onRetry : undefined} />
             ))}
             {isStreaming && streamingContent && (
               <MessageBubble

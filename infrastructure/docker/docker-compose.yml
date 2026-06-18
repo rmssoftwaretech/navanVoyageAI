@@ -20,6 +20,7 @@ services:
       - ../../.env
     environment:
       - PYTHONPATH=/app
+      - AMADEUS_MCP_URL=http://amadeus-mcp:8101
     networks:
       - nva-net
 

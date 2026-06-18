@@ -1,6 +1,11 @@
+import { useRef, useState } from 'react'
 import AppHeader from './AppHeader'
 import ConversationSidebar from './ConversationSidebar'
 import type { Conversation, User } from '@/types/nva'
+
+const MIN_WIDTH = 300
+const MAX_WIDTH = 720
+const DEFAULT_WIDTH = 400
 
 interface AppLayoutProps {
   user: User
@@ -27,6 +32,33 @@ export default function AppLayout({
   children,
   inspector,
 }: AppLayoutProps) {
+  const [panelWidth, setPanelWidth] = useState(DEFAULT_WIDTH)
+  const dragging = useRef(false)
+
+  function startResize(e: React.MouseEvent) {
+    e.preventDefault()
+    dragging.current = true
+    const startX = e.clientX
+    const startW = panelWidth
+
+    function onMove(mv: MouseEvent) {
+      if (!dragging.current) return
+      const delta = startX - mv.clientX // drag left = wider
+      setPanelWidth(Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startW + delta)))
+    }
+    function onUp() {
+      dragging.current = false
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      document.body.style.userSelect = ''
+      document.body.style.cursor = ''
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+    document.body.style.userSelect = 'none'
+    document.body.style.cursor = 'ew-resize'
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: 'var(--bg-page)' }}>
       <AppHeader onAdminOpen={onAdminOpen} username={user.display_name || user.username} />
@@ -45,25 +77,46 @@ export default function AppLayout({
           {children}
         </main>
 
-        {/* Right inspector panel */}
+        {/* Right inspector panel — resizable from left edge */}
         {inspectorOpen && (
           <aside
             style={{
-              width: 380,
+              width: panelWidth,
               flexShrink: 0,
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
               borderLeft: '1px solid var(--border)',
               background: 'var(--bg-surface)',
+              position: 'relative',
             }}
           >
+            {/* Drag handle — left edge */}
+            <div
+              onMouseDown={startResize}
+              title="Drag to resize"
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 5,
+                cursor: 'ew-resize',
+                zIndex: 10,
+                background: 'transparent',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'var(--brand)')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
+            />
+
+            {/* Inspector header */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '8px 12px',
+                padding: '8px 12px 8px 14px',
                 flexShrink: 0,
                 borderBottom: '1px solid var(--border)',
                 background: 'var(--bg-page)',
@@ -74,19 +127,15 @@ export default function AppLayout({
               </span>
               <button
                 onClick={onInspectorToggle}
-                style={{
-                  fontSize: 12,
-                  color: 'var(--text-muted)',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '2px 4px',
-                }}
+                style={{ fontSize: 12, color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px 4px' }}
               >
                 ✕
               </button>
             </div>
-            <div style={{ flex: 1, overflow: 'auto' }}>{inspector}</div>
+
+            <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              {inspector}
+            </div>
           </aside>
         )}
 

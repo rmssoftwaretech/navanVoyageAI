@@ -140,13 +140,20 @@ class OrchestratorAgent(BaseAgent):
 
         # Aggregate + stream tokens
         assembled = ""
+        usage: dict = {}
         async for token_event in self._aggregate_stream(content, context_block, sub_results, tot_context):
             if '"type": "token"' in token_event:
                 try:
-                    data = json.loads(token_event[6:])  # strip "data: "
+                    data = json.loads(token_event[6:])
                     assembled += data.get("data", "")
                 except Exception:
                     pass
+            elif '"type": "usage"' in token_event:
+                try:
+                    usage = json.loads(token_event[6:])
+                except Exception:
+                    pass
+                continue  # don't forward usage event to client
             yield token_event
 
         # Persist AI turn + update title
@@ -217,7 +224,15 @@ class OrchestratorAgent(BaseAgent):
                 log.warning("JudgeAgent task creation failed: %s", exc)
 
         yield sse({"type": "agent_done", "agent": "orchestrator"})
-        yield sse({"type": "done"})
+        # Emit token counts from usage if captured, else estimate from text length
+        input_tok = usage.get("input_tokens") or max(1, (len(content) + len(context_block)) // 4)
+        output_tok = usage.get("output_tokens") or max(1, len(assembled) // 4)
+        yield sse({
+            "type": "done",
+            "input_tokens": input_tok,
+            "output_tokens": output_tok,
+            "total_tokens": input_tok + output_tok,
+        })
 
     async def _classify(self, message: str, context_block: str) -> list[str]:
         resp = await self._client.chat.completions.create(
@@ -285,8 +300,15 @@ class OrchestratorAgent(BaseAgent):
                 temperature=float(self._cfg.get("temperature", 0.3)),
                 max_tokens=int(self._cfg.get("max_tokens", 2048)),
                 stream=True,
+                stream_options={"include_usage": True},
             )
             async for chunk in stream:
+                if hasattr(chunk, "usage") and chunk.usage:
+                    yield sse({
+                        "type": "usage",
+                        "input_tokens": chunk.usage.prompt_tokens,
+                        "output_tokens": chunk.usage.completion_tokens,
+                    })
                 delta = chunk.choices[0].delta.content if chunk.choices else None
                 if delta:
                     yield sse({"type": "token", "data": delta})

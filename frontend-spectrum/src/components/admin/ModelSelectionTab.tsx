@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Button, TextField, NumberField, ProgressCircle } from '@react-spectrum/s2'
+import { Button, TextField, NumberField, ProgressCircle, ToastQueue } from '@react-spectrum/s2'
 import { getModelConfig, updateModelConfig } from '@/services/admin'
 import type { AgentConfig } from '@/services/admin'
 
@@ -16,28 +16,26 @@ export default function ModelSelectionTab() {
   const [config, setConfig] = useState<Record<string, AgentConfig>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     getModelConfig()
       .then(setConfig)
-      .catch(() => setError('Failed to load config'))
+      .catch(() => ToastQueue.negative('Failed to load config', { timeout: 5000 }))
       .finally(() => setLoading(false))
   }, [])
 
   function setField(agent: string, field: keyof AgentConfig, value: string | number) {
     setConfig((prev) => ({ ...prev, [agent]: { ...prev[agent], [field]: value } }))
-    setSaved(false)
   }
 
   async function save() {
-    setSaving(true); setError(null)
+    setSaving(true)
     try {
       await updateModelConfig(config)
-      setSaved(true)
-    } catch { setError('Save failed') }
-    finally { setSaving(false) }
+      ToastQueue.positive('Configuration saved', { timeout: 3000 })
+    } catch {
+      ToastQueue.negative('Save failed — check console', { timeout: 5000 })
+    } finally { setSaving(false) }
   }
 
   if (loading) return <div style={center}><ProgressCircle isIndeterminate aria-label="Loading" /></div>
@@ -46,11 +44,7 @@ export default function ModelSelectionTab() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h3 style={heading}>Per-Agent LLM Configuration</h3>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          {saved && <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>✓ Saved</span>}
-          {error && <span style={{ fontSize: 12, color: '#dc2626' }}>{error}</span>}
-          <Button variant="accent" onPress={save} isPending={saving}>Save All</Button>
-        </div>
+        <Button variant="accent" onPress={save} isPending={saving}>Save All</Button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>

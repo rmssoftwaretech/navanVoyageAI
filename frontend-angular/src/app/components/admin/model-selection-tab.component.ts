@@ -1,11 +1,11 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnInit, inject } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { MatFormFieldModule } from '@angular/material/form-field'
 import { MatInputModule } from '@angular/material/input'
 import { MatButtonModule } from '@angular/material/button'
-import { MatSliderModule } from '@angular/material/slider'
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'
+import { MatSnackBar } from '@angular/material/snack-bar'
 import { AdminService, AgentConfig } from '../../services/admin.service'
 
 const AGENT_LABELS: Record<string, string> = {
@@ -20,7 +20,7 @@ const AGENT_COLORS: Record<string, string> = {
 @Component({
   selector: 'nva-model-selection-tab',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatSliderModule, MatProgressSpinnerModule],
+  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatProgressSpinnerModule],
   template: `
     <div style="padding: 8px 0;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -52,10 +52,6 @@ const AGENT_COLORS: Record<string, string> = {
           </div>
         </div>
       </div>
-
-      <div *ngIf="saved" style="margin-top: 12px; padding: 10px 14px; background: rgba(22,163,74,0.1); border: 1px solid #16a34a; border-radius: 6px; font-size: 13px; color: #16a34a;">
-        ✓ Configuration saved
-      </div>
     </div>
   `,
 })
@@ -63,8 +59,8 @@ export class ModelSelectionTabComponent implements OnInit {
   configs: Record<string, AgentConfig> = {}
   loading = true
   saving = false
-  saved = false
 
+  private snackBar = inject(MatSnackBar)
   get agentKeys(): string[] { return Object.keys(this.configs) }
 
   constructor(private adminSvc: AdminService) {}
@@ -72,7 +68,10 @@ export class ModelSelectionTabComponent implements OnInit {
   ngOnInit(): void {
     this.adminSvc.getModelConfig().subscribe({
       next: (data) => { this.configs = data; this.loading = false },
-      error: () => { this.loading = false },
+      error: () => {
+        this.loading = false
+        this.snackBar.open('Failed to load config', 'Dismiss', { duration: 5000 })
+      },
     })
   }
 
@@ -81,10 +80,15 @@ export class ModelSelectionTabComponent implements OnInit {
 
   save(): void {
     this.saving = true
-    this.saved = false
     this.adminSvc.saveModelConfig(this.configs).subscribe({
-      next: () => { this.saving = false; this.saved = true; setTimeout(() => this.saved = false, 3000) },
-      error: () => { this.saving = false },
+      next: () => {
+        this.saving = false
+        this.snackBar.open('Configuration saved', undefined, { duration: 3000 })
+      },
+      error: () => {
+        this.saving = false
+        this.snackBar.open('Save failed — check console', 'Dismiss', { duration: 5000 })
+      },
     })
   }
 }

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'
+import { MatTableModule } from '@angular/material/table'
 import { AdminService, EvalScore } from '../../services/admin.service'
 
 const CRITERIA = ['relevance', 'accuracy', 'policy_compliance', 'completeness', 'tone'] as const
@@ -12,7 +13,7 @@ const CRITERION_LABELS: Record<string, string> = {
 @Component({
   selector: 'nva-eval-metrics-tab',
   standalone: true,
-  imports: [CommonModule, MatProgressSpinnerModule],
+  imports: [CommonModule, MatProgressSpinnerModule, MatTableModule],
   template: `
     <div style="padding: 8px 0;">
       <h3 style="margin: 0 0 20px; font-size: 15px; font-weight: 700; color: #1E3A5F;">Eval Metrics</h3>
@@ -48,51 +49,70 @@ const CRITERION_LABELS: Record<string, string> = {
           </div>
         </div>
 
-        <!-- Recent scores table -->
+        <!-- mat-table for recent scores -->
         <h4 style="margin: 0 0 10px; font-size: 13px; font-weight: 600; color: #475569;">Recent Evaluations</h4>
         <div style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-            <thead>
-              <tr style="background: #f8fafc;">
-                <th *ngFor="let h of ['Time','Score','Pass','Model','Reasoning']"
-                  style="padding: 7px 12px; text-align: left; font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0; white-space: nowrap;">{{ h }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <ng-container *ngFor="let e of scores.slice(0, 50)">
-                <tr (click)="toggle(e.eval_id)"
-                  style="border-bottom: 1px solid #f1f5f9; cursor: pointer;"
-                  [style.background]="expanded === e.eval_id ? '#f0f7ff' : ''">
-                  <td style="padding: 7px 12px; color: #334155;">{{ fmt(e.timestamp) }}</td>
-                  <td style="padding: 7px 12px;"><span style="font-weight: 700;" [style.color]="scoreColor(e.total_score)">{{ (e.total_score * 100).toFixed(0) }}%</span></td>
-                  <td style="padding: 7px 12px;"><span style="font-weight: 700;" [style.color]="e.passed ? '#16a34a' : '#dc2626'">{{ e.passed ? '✓' : '✕' }}</span></td>
-                  <td style="padding: 7px 12px; font-size: 11px; color: #94a3b8;">{{ e.model }}</td>
-                  <td style="padding: 7px 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: #64748b;">{{ e.reasoning }}</td>
-                </tr>
-                <tr *ngIf="expanded === e.eval_id" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-                  <td colspan="5" style="padding: 10px 14px;">
-                    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                      <span *ngFor="let c of criteria" style="font-size: 12px;">
-                        <span style="color: #64748b;">{{ criterionLabel(c) }}: </span>
-                        <span style="font-weight: 700;" [style.color]="scoreColor(e.scores[c] ?? 0)">{{ ((e.scores[c] ?? 0) * 100).toFixed(0) }}%</span>
-                      </span>
-                    </div>
-                    <p *ngIf="e.reasoning" style="margin: 8px 0 0; font-size: 12px; color: #475569; line-height: 1.5;">{{ e.reasoning }}</p>
-                  </td>
-                </tr>
-              </ng-container>
-            </tbody>
+          <table mat-table [dataSource]="scores.slice(0, 50)" style="width: 100%;">
+            <ng-container matColumnDef="timestamp">
+              <th mat-header-cell *matHeaderCellDef>Time</th>
+              <td mat-cell *matCellDef="let e">{{ fmt(e.timestamp) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="total_score">
+              <th mat-header-cell *matHeaderCellDef>Score</th>
+              <td mat-cell *matCellDef="let e">
+                <span style="font-weight: 700;" [style.color]="scoreColor(e.total_score)">{{ (e.total_score * 100).toFixed(0) }}%</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="passed">
+              <th mat-header-cell *matHeaderCellDef>Pass</th>
+              <td mat-cell *matCellDef="let e">
+                <span style="font-weight: 700;" [style.color]="e.passed ? '#16a34a' : '#dc2626'">{{ e.passed ? '✓' : '✕' }}</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="model">
+              <th mat-header-cell *matHeaderCellDef>Model</th>
+              <td mat-cell *matCellDef="let e" style="font-size: 11px; color: #94a3b8;">{{ e.model }}</td>
+            </ng-container>
+            <ng-container matColumnDef="reasoning">
+              <th mat-header-cell *matHeaderCellDef>Reasoning</th>
+              <td mat-cell *matCellDef="let e" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: #64748b;">
+                {{ e.reasoning }}
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columns"></tr>
+            <tr mat-row *matRowDef="let row; columns: columns;" (click)="toggle(row.eval_id)" style="cursor: pointer;"
+              [style.background]="expanded === row.eval_id ? '#f0f7ff' : ''"></tr>
           </table>
+        </div>
+
+        <!-- Expanded criteria detail -->
+        <div *ngIf="expandedScore" style="margin-top: 12px; padding: 12px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px;">
+          <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 8px;">
+            <span *ngFor="let c of criteria">
+              <span style="color: #64748b;">{{ criterionLabel(c) }}: </span>
+              <span style="font-weight: 700;" [style.color]="scoreColor(expandedScore!.scores[c] || 0)">{{ ((expandedScore!.scores[c] || 0) * 100).toFixed(0) }}%</span>
+            </span>
+          </div>
+          <p *ngIf="expandedScore.reasoning" style="margin: 0; color: #475569; line-height: 1.5;">{{ expandedScore.reasoning }}</p>
         </div>
       </ng-container>
     </div>
   `,
+  styles: [`
+    th.mat-header-cell { font-weight: 600; color: #475569; font-size: 12px; }
+    td.mat-cell { color: #334155; font-size: 13px; }
+  `],
 })
 export class EvalMetricsTabComponent implements OnInit {
   scores: EvalScore[] = []
   loading = true
   expanded: string | null = null
   criteria = [...CRITERIA]
+  columns = ['timestamp', 'total_score', 'passed', 'model', 'reasoning']
+
+  get expandedScore(): EvalScore | undefined {
+    return this.scores.find(s => s.eval_id === this.expanded)
+  }
 
   get kpis() {
     if (!this.scores.length) return []

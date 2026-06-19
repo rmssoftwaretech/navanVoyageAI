@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms'
 import { MatFormFieldModule } from '@angular/material/form-field'
 import { MatInputModule } from '@angular/material/input'
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'
+import { MatTableModule } from '@angular/material/table'
 import { AdminService, AuditEntry } from '../../services/admin.service'
 
 const AGENT_COLORS: Record<string, string> = {
@@ -14,7 +15,7 @@ const AGENT_COLORS: Record<string, string> = {
 @Component({
   selector: 'nva-audit-log-tab',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule],
+  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule, MatTableModule],
   template: `
     <div style="padding: 8px 0;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -36,32 +37,53 @@ const AGENT_COLORS: Record<string, string> = {
       </div>
 
       <div *ngIf="!loading && filtered.length > 0" style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-          <thead>
-            <tr style="background: #f8fafc;">
-              <th *ngFor="let h of ['Time','Agent','Action','Latency','User']" style="padding: 8px 12px; text-align: left; font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0; white-space: nowrap;">{{ h }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let e of filtered" style="border-bottom: 1px solid #f1f5f9;">
-              <td style="padding: 7px 12px; color: #334155;">{{ fmt(e.timestamp) }}</td>
-              <td style="padding: 7px 12px;">
-                <span [style.background]="agentColor(e.agent)" style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; color: #fff; text-transform: capitalize;">{{ e.agent }}</span>
-              </td>
-              <td style="padding: 7px 12px; color: #334155; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.action }}</td>
-              <td style="padding: 7px 12px; color: #334155;">{{ e.latency_ms != null ? e.latency_ms + 'ms' : '—' }}</td>
-              <td style="padding: 7px 12px; color: #94a3b8;">{{ e.user ?? '—' }}</td>
-            </tr>
-          </tbody>
+        <table mat-table [dataSource]="filtered" style="width: 100%;">
+          <ng-container matColumnDef="timestamp">
+            <th mat-header-cell *matHeaderCellDef>Time</th>
+            <td mat-cell *matCellDef="let e">{{ fmt(e.timestamp) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="agent">
+            <th mat-header-cell *matHeaderCellDef>Agent</th>
+            <td mat-cell *matCellDef="let e">
+              <span [style.background]="agentColor(e.agent)"
+                style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; color: #fff; text-transform: capitalize;">
+                {{ e.agent }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="action">
+            <th mat-header-cell *matHeaderCellDef>Action</th>
+            <td mat-cell *matCellDef="let e" style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.action }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="latency_ms">
+            <th mat-header-cell *matHeaderCellDef>Latency</th>
+            <td mat-cell *matCellDef="let e">{{ e.latency_ms != null ? e.latency_ms + 'ms' : '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="user">
+            <th mat-header-cell *matHeaderCellDef>User</th>
+            <td mat-cell *matCellDef="let e" style="color: #94a3b8;">{{ e.user ?? '—' }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columns"></tr>
+          <tr mat-row *matRowDef="let row; columns: columns;" style="font-size: 13px;"></tr>
         </table>
       </div>
     </div>
   `,
+  styles: [`
+    th.mat-header-cell { font-weight: 600; color: #475569; font-size: 12px; }
+    td.mat-cell { color: #334155; font-size: 13px; }
+  `],
 })
 export class AuditLogTabComponent implements OnInit {
   entries: AuditEntry[] = []
   loading = true
   search = ''
+  columns = ['timestamp', 'agent', 'action', 'latency_ms', 'user']
 
   get filtered(): AuditEntry[] {
     const q = this.search.toLowerCase()

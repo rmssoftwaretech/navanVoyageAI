@@ -10,40 +10,45 @@ import type { MessageTurn } from '../../services/chat.service'
   imports: [CommonModule, MatProgressSpinnerModule, AgentBadgeComponent],
   template: `
     <div class="nva-messages" #scrollContainer>
+
       @for (turn of turns; track $index) {
-        <div style="display: flex; flex-direction: column;" [style.align-items]="turn.role === 'user' ? 'flex-end' : 'flex-start'">
-          <div class="msg-bubble" [class.user]="turn.role === 'user'" [class.assistant]="turn.role === 'assistant'">
-            {{ turn.content }}
+        <div class="nva-msg-row" [class.user]="turn.role === 'user'" [class.assistant]="turn.role === 'assistant'">
+          <div class="nva-bubble">{{ turn.content }}</div>
+
+          <div class="nva-msg-footer">
+            <span class="nva-msg-time">{{ turn.timestamp | date:'shortTime' }}</span>
+
+            @if (turn.role === 'assistant' && turn.eval_score !== undefined) {
+              <span class="nva-eval-badge" [class.pass]="turn.eval_passed" [class.fail]="!turn.eval_passed">
+                {{ turn.eval_passed ? '✓' : '✕' }} {{ (turn.eval_score! * 100).toFixed(0) }}%
+              </span>
+            }
           </div>
+
           @if (turn.role === 'assistant' && turn.agents && turn.agents.length > 0) {
-            <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px;">
+            <div class="nva-agent-chips">
               @for (agent of turn.agents; track agent) {
                 <nva-agent-badge [agent]="agent" />
               }
             </div>
           }
-          @if (turn.role === 'assistant' && turn.eval_score !== undefined) {
-            <div class="msg-meta" [style.color]="turn.eval_passed ? '#065F46' : '#991B1B'">
-              {{ turn.eval_passed ? '✓' : '✕' }} Eval: {{ (turn.eval_score! * 100).toFixed(0) }}%
-            </div>
-          }
-          <div class="msg-meta">{{ turn.timestamp | date:'shortTime' }}</div>
         </div>
       }
 
       @if (streaming && streamContent) {
-        <div style="display: flex; flex-direction: column; align-items: flex-start;">
-          <div class="msg-bubble assistant">
-            {{ streamContent }}<span class="streaming-cursor"></span>
-          </div>
+        <div class="nva-msg-row assistant">
+          <div class="nva-bubble">{{ streamContent }}<span class="nva-streaming-cursor"></span></div>
         </div>
       }
+
       @if (streaming && !streamContent) {
-        <div style="display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 12px;">
-          <mat-progress-spinner mode="indeterminate" diameter="18" />
+        <div class="nva-typing-indicator">
+          <mat-progress-spinner mode="indeterminate" diameter="16"
+            style="--mdc-circular-progress-active-indicator-color: #64748b;" />
           Agents working…
         </div>
       }
+
       <div #scrollAnchor></div>
     </div>
   `,

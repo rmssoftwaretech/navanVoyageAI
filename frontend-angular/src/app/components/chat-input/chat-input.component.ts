@@ -5,15 +5,15 @@ import { MatFormFieldModule } from '@angular/material/form-field'
 import { MatInputModule } from '@angular/material/input'
 import { MatButtonModule } from '@angular/material/button'
 import { MatIconModule } from '@angular/material/icon'
+import { MatTooltipModule } from '@angular/material/tooltip'
 
 @Component({
   selector: 'nva-chat-input',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule],
+  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MatTooltipModule],
   template: `
-    <div class="chat-input-area">
+    <div class="nva-input-area">
       <mat-form-field appearance="outline" style="flex: 1;">
-        <mat-label>Message</mat-label>
         <textarea
           matInput
           [(ngModel)]="value"
@@ -21,14 +21,14 @@ import { MatIconModule } from '@angular/material/icon'
           [disabled]="disabled"
           placeholder="Ask about flights, hotels, or travel policy…"
           rows="2"
-          style="resize: none;"
+          style="resize: none; font-size: 14px; line-height: 1.5;"
         ></textarea>
       </mat-form-field>
       <button
         mat-flat-button
         [disabled]="disabled || !value.trim()"
         (click)="handleSend()"
-        style="background: var(--nva-navy); color: #fff; margin-bottom: 22px;"
+        matTooltip="Send (Enter)"
       >
         <mat-icon>send</mat-icon>
         Send

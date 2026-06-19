@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input'
 import { MatButtonModule } from '@angular/material/button'
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'
 import { MatCardModule } from '@angular/material/card'
+import { MatIconModule } from '@angular/material/icon'
 import { AuthService } from '../../services/auth.service'
 
 @Component({
@@ -15,56 +16,59 @@ import { AuthService } from '../../services/auth.service'
   imports: [
     CommonModule, FormsModule,
     MatFormFieldModule, MatInputModule, MatButtonModule,
-    MatProgressSpinnerModule, MatCardModule,
+    MatProgressSpinnerModule, MatCardModule, MatIconModule,
   ],
   template: `
     <div class="nva-login-wrap">
       <mat-card class="nva-login-card">
-        <mat-card-content>
-          <!-- Brand -->
-          <div style="text-align: center; margin-bottom: 28px;">
-            <div style="font-size: 40px; margin-bottom: 8px;">✈</div>
-            <h1 style="margin: 0; font-size: 22px; font-weight: 700; color: var(--nva-navy); font-family: 'IBM Plex Sans', sans-serif;">
-              navanVoyageAI
-            </h1>
-            <p style="margin: 4px 0 0; font-size: 12px; color: #64748b;">Corporate Travel Assistant · Angular M3</p>
+        <mat-card-content style="padding: 36px 40px;">
+
+          <div class="nva-login-brand">
+            <div class="nva-login-logo">✈</div>
+            <h1>navanVoyageAI</h1>
+            <p>Corporate Travel Assistant &middot; Angular M3</p>
           </div>
 
-          <!-- Error -->
           @if (error) {
-            <div style="background: #FEE2E2; border: 1px solid #FECACA; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; color: #991B1B; font-size: 13px;">
+            <div class="nva-login-error">
+              <mat-icon style="font-size: 16px; height: 16px; width: 16px;">error_outline</mat-icon>
               {{ error }}
             </div>
           }
 
-          <!-- Form -->
-          <form (ngSubmit)="handleSubmit()">
-            <mat-form-field appearance="outline" style="width: 100%; margin-bottom: 8px;">
+          <form (ngSubmit)="handleSubmit()" style="display: flex; flex-direction: column; gap: 16px;">
+            <mat-form-field appearance="outline" style="width: 100%;" subscriptSizing="dynamic">
               <mat-label>Username</mat-label>
+              <mat-icon matPrefix style="color: #94a3b8; margin-right: 4px;">person_outline</mat-icon>
               <input matInput [(ngModel)]="username" name="username" required autocomplete="username" />
             </mat-form-field>
 
-            <mat-form-field appearance="outline" style="width: 100%; margin-bottom: 20px;">
+            <mat-form-field appearance="outline" style="width: 100%;" subscriptSizing="dynamic">
               <mat-label>Password</mat-label>
-              <input matInput [(ngModel)]="password" name="password" type="password" required autocomplete="current-password" />
+              <mat-icon matPrefix style="color: #94a3b8; margin-right: 4px;">lock_outline</mat-icon>
+              <input matInput [(ngModel)]="password" name="password"
+                [type]="showPw ? 'text' : 'password'"
+                required autocomplete="current-password" />
+              <button mat-icon-button matSuffix type="button" (click)="showPw = !showPw"
+                style="color: #94a3b8;" [attr.aria-label]="showPw ? 'Hide password' : 'Show password'">
+                <mat-icon>{{ showPw ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
             </mat-form-field>
 
-            <button
-              mat-flat-button
-              type="submit"
-              [disabled]="loading"
-              style="width: 100%; background: var(--nva-navy); color: #fff; height: 44px; font-size: 15px;"
-            >
+            <button mat-flat-button type="submit" class="nva-login-submit" [disabled]="loading">
               @if (loading) {
-                <mat-progress-spinner mode="indeterminate" diameter="20" style="display: inline-block; margin-right: 8px;" />
+                <mat-progress-spinner mode="indeterminate" diameter="18"
+                  style="display: inline-block; margin-right: 8px; --mdc-circular-progress-active-indicator-color: #fff;" />
               }
               {{ loading ? 'Signing in…' : 'Sign In' }}
             </button>
           </form>
 
-          <p style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 20px;">
-            Demo: admin / traveller · password from <code>.env</code>
+          <p class="nva-login-hint">
+            Demo credentials: <code>admin</code> or <code>traveller</code><br>
+            Password from <code>.env</code>
           </p>
+
         </mat-card-content>
       </mat-card>
     </div>
@@ -75,6 +79,7 @@ export class LoginComponent {
   password = ''
   error = ''
   loading = false
+  showPw = false
 
   constructor(private auth: AuthService, private router: Router) {}
 

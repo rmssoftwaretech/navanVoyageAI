@@ -1,6 +1,5 @@
 @use '@angular/material' as mat;
 
-// M3 Navy/Gold theme
 $nva-theme: mat.define-theme((
   color: (
     theme-type: light,
@@ -17,59 +16,208 @@ $nva-theme: mat.define-theme((
 ));
 
 :root {
-  --nva-navy: #1E3A5F;
-  --nva-gold: #D97706;
-  --nva-surface: #F8FAFC;
-  --nva-border: #E2E8F0;
-}
-
-html {
   @include mat.all-component-themes($nva-theme);
   @include mat.color-variants-backwards-compatibility($nva-theme);
+
+  --nva-navy:        #1E3A5F;
+  --nva-navy-dark:   #162d49;
+  --nva-gold:        #D97706;
+  --nva-gold-light:  rgba(217, 119, 6, 0.12);
+  --nva-surface:     #F8FAFC;
+  --nva-surface-2:   #F1F5F9;
+  --nva-border:      #E2E8F0;
+  --nva-text:        #0F172A;
+  --nva-muted:       #64748B;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; }
 
-body {
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
   font-family: 'IBM Plex Sans', sans-serif;
   background: var(--nva-surface);
-  color: #1e293b;
+  color: var(--nva-text);
+  -webkit-font-smoothing: antialiased;
 }
 
-// Shell layout
-.nva-shell {
-  display: grid;
-  grid-template-rows: 56px 1fr;
-  grid-template-columns: 240px 1fr 300px;
-  grid-template-areas:
-    "header header header"
-    "sidebar chat inspector";
+// ── App shell ──────────────────────────────────────────────────────────────────
+
+.nva-app {
+  display: flex;
+  flex-direction: column;
   height: 100vh;
   overflow: hidden;
 }
 
-.nva-header {
-  grid-area: header;
-  background: var(--nva-navy);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  color: #fff;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+// ── Toolbar ────────────────────────────────────────────────────────────────────
+
+.nva-toolbar {
+  background: var(--nva-navy) !important;
+  color: #fff !important;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  z-index: 10;
+  gap: 8px;
+
+  .nva-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.01em;
+
+    .nva-brand-icon {
+      font-size: 22px;
+    }
+
+    .nva-brand-tag {
+      font-size: 10px;
+      font-weight: 500;
+      opacity: 0.6;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 4px;
+      margin-left: 2px;
+    }
+  }
+
+  .nva-spacer { flex: 1; }
+
+  .nva-user-name {
+    font-size: 13px;
+    opacity: 0.85;
+    margin-right: 4px;
+  }
+
+  button[mat-icon-button] {
+    color: rgba(255,255,255,0.85) !important;
+
+    &:hover {
+      color: #fff !important;
+      background: rgba(255,255,255,0.1) !important;
+    }
+  }
+
+  button[mat-stroked-button] {
+    color: rgba(255,255,255,0.9) !important;
+    border-color: rgba(255,255,255,0.35) !important;
+    font-size: 12px;
+
+    &:hover {
+      background: rgba(255,255,255,0.08) !important;
+    }
+  }
 }
 
-.nva-sidebar {
-  grid-area: sidebar;
+// ── Sidenav container ──────────────────────────────────────────────────────────
+
+mat-sidenav-container {
+  flex: 1;
+  overflow: hidden;
+}
+
+mat-sidenav.nva-sidenav {
+  width: 260px;
+  border-right: 1px solid var(--nva-border) !important;
   background: #fff;
-  border-right: 1px solid var(--nva-border);
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
 
-.nva-chat {
-  grid-area: chat;
+mat-sidenav-content.nva-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+// ── Sidenav header ─────────────────────────────────────────────────────────────
+
+.nva-sidenav-header {
+  padding: 16px 12px 12px;
+  border-bottom: 1px solid var(--nva-border);
+
+  button[mat-flat-button] {
+    width: 100%;
+    background: var(--nva-navy) !important;
+    color: #fff !important;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    height: 40px;
+
+    .mat-icon { font-size: 18px; height: 18px; width: 18px; }
+
+    &:hover { background: var(--nva-navy-dark) !important; }
+  }
+}
+
+.nva-sidenav-section-label {
+  padding: 10px 16px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--nva-muted);
+}
+
+// ── Conversation list ──────────────────────────────────────────────────────────
+
+mat-nav-list.nva-conv-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 8px;
+}
+
+.nva-conv-item {
+  border-radius: 10px !important;
+  margin-bottom: 2px;
+  padding: 0 8px !important;
+  height: auto !important;
+  min-height: 56px !important;
+
+  &.active {
+    background: var(--nva-gold-light) !important;
+    border-left: 3px solid var(--nva-gold);
+
+    .nva-conv-title { color: var(--nva-navy); font-weight: 600; }
+  }
+
+  &:not(.active):hover {
+    background: var(--nva-surface) !important;
+  }
+
+  .nva-conv-title {
+    font-size: 13px;
+    color: var(--nva-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.3;
+  }
+
+  .nva-conv-meta {
+    font-size: 11px;
+    color: var(--nva-muted);
+    margin-top: 2px;
+  }
+}
+
+.nva-conv-empty {
+  padding: 24px 16px;
+  font-size: 13px;
+  color: var(--nva-muted);
+  text-align: center;
+}
+
+// ── Chat area ──────────────────────────────────────────────────────────────────
+
+.nva-chat-area {
+  flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -79,126 +227,364 @@ body {
 .nva-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 20px 24px;
+  padding: 24px 32px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+  scroll-behavior: smooth;
+
+  &::-webkit-scrollbar { width: 5px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: var(--nva-border); border-radius: 10px; }
 }
 
-.nva-inspector {
-  grid-area: inspector;
-  background: #fff;
-  border-left: 1px solid var(--nva-border);
-  padding: 16px;
-  overflow-y: auto;
-  font-size: 12px;
-}
+// ── Message bubbles ─────────────────────────────────────────────────────────────
 
-// Login
-.nva-login-wrap {
+.nva-msg-row {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f0f4f8 0%, #e8edf5 100%);
-}
-
-.nva-login-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 40px 36px;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 4px 24px rgba(30, 58, 95, 0.12);
-}
-
-// Message bubbles
-.msg-bubble {
-  max-width: 72%;
-  padding: 12px 16px;
-  border-radius: 12px;
-  line-height: 1.6;
-  font-size: 14px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  flex-direction: column;
 
   &.user {
-    align-self: flex-end;
-    background: var(--nva-navy);
-    color: #fff;
-    border-bottom-right-radius: 4px;
+    align-items: flex-end;
+
+    .nva-bubble {
+      background: var(--nva-navy);
+      color: #fff;
+      border-radius: 18px 18px 4px 18px;
+    }
   }
 
   &.assistant {
-    align-self: flex-start;
-    background: #fff;
-    color: #1e293b;
-    border: 1px solid var(--nva-border);
-    border-bottom-left-radius: 4px;
+    align-items: flex-start;
+
+    .nva-bubble {
+      background: #fff;
+      color: var(--nva-text);
+      border: 1px solid var(--nva-border);
+      border-radius: 18px 18px 18px 4px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
   }
 }
 
-.msg-meta {
-  font-size: 10px;
-  opacity: 0.65;
-  margin-top: 4px;
+.nva-bubble {
+  max-width: 68%;
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-// Agent badges
-.agent-badge {
-  display: inline-flex;
+.nva-msg-footer {
+  display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 10px;
+  gap: 6px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.nva-msg-time {
+  font-size: 11px;
+  color: var(--nva-muted);
+}
+
+.nva-eval-badge {
+  font-size: 11px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 2px;
+  padding: 1px 6px;
+  border-radius: 4px;
+
+  &.pass { color: #065F46; background: rgba(6,95,70,0.08); }
+  &.fail { color: #991B1B; background: rgba(153,27,27,0.08); }
 }
 
-// Conv list item
-.conv-item {
-  padding: 10px 14px;
-  cursor: pointer;
-  border-bottom: 1px solid var(--nva-border);
-  border-left: 3px solid transparent;
-  transition: background 0.15s;
+// ── Streaming ─────────────────────────────────────────────────────────────────
+
+.nva-typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  color: var(--nva-muted);
   font-size: 13px;
-
-  &.active {
-    background: #EFF6FF;
-    border-left-color: var(--nva-navy);
-    color: var(--nva-navy);
-    font-weight: 600;
-  }
-
-  &:hover:not(.active) {
-    background: #f8fafc;
-  }
 }
 
-// Streaming cursor
-.streaming-cursor {
+.nva-streaming-cursor {
   display: inline-block;
   width: 8px;
   height: 14px;
-  background: #64748b;
+  background: var(--nva-navy);
   margin-left: 2px;
-  border-radius: 1px;
+  border-radius: 2px;
   animation: blink 1s steps(2) infinite;
+  vertical-align: text-bottom;
 }
 
-@keyframes blink {
-  to { opacity: 0; }
+@keyframes blink { to { opacity: 0; } }
+
+// ── Agent chips ───────────────────────────────────────────────────────────────
+
+.nva-agent-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
 }
 
-// Chat input area
-.chat-input-area {
+mat-chip.nva-chip {
+  height: 24px !important;
+  min-height: 24px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 0 10px !important;
+  border-radius: 6px !important;
+}
+
+// ── Chat input ────────────────────────────────────────────────────────────────
+
+.nva-input-area {
+  padding: 12px 24px 16px;
+  background: #fff;
+  border-top: 1px solid var(--nva-border);
   display: flex;
   gap: 8px;
-  padding: 12px 16px;
-  border-top: 1px solid var(--nva-border);
-  background: #fff;
   align-items: flex-end;
+
+  mat-form-field {
+    flex: 1;
+  }
+
+  button[mat-flat-button] {
+    background: var(--nva-navy) !important;
+    color: #fff !important;
+    margin-bottom: 22px;
+    border-radius: 10px;
+    min-width: 80px;
+
+    &:disabled { opacity: 0.45; }
+    &:not(:disabled):hover { background: var(--nva-navy-dark) !important; }
+  }
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+
+.nva-empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--nva-muted);
+  padding: 40px;
+
+  .nva-empty-icon {
+    font-size: 64px;
+    opacity: 0.25;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--nva-navy);
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    text-align: center;
+    max-width: 280px;
+    line-height: 1.6;
+  }
+
+  button[mat-flat-button] {
+    background: var(--nva-navy) !important;
+    color: #fff !important;
+    border-radius: 10px;
+    padding: 0 24px;
+    height: 42px;
+  }
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────────
+
+.nva-login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #EFF4FB 0%, #E8F0F9 50%, #EEF2F8 100%);
+  padding: 24px;
+}
+
+mat-card.nva-login-card {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 20px !important;
+  box-shadow: 0 4px 32px rgba(30,58,95,0.10), 0 1px 6px rgba(30,58,95,0.06) !important;
+  border: 1px solid rgba(30,58,95,0.06);
+}
+
+.nva-login-brand {
+  text-align: center;
+  margin-bottom: 32px;
+
+  .nva-login-logo {
+    width: 56px;
+    height: 56px;
+    background: var(--nva-navy);
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    font-size: 28px;
+    box-shadow: 0 4px 16px rgba(30,58,95,0.25);
+  }
+
+  h1 {
+    margin: 0 0 6px;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--nva-navy);
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--nva-muted);
+  }
+}
+
+.nva-login-error {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  color: #991B1B;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nva-login-submit {
+  width: 100%;
+  background: var(--nva-navy) !important;
+  color: #fff !important;
+  height: 48px !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  border-radius: 12px !important;
+  margin-top: 4px;
+
+  &:not(:disabled):hover { background: var(--nva-navy-dark) !important; }
+  &:disabled { opacity: 0.6; }
+}
+
+.nva-login-hint {
+  text-align: center;
+  font-size: 11px;
+  color: var(--nva-muted);
+  margin-top: 20px;
+  line-height: 1.6;
+
+  code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    background: var(--nva-surface-2);
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+}
+
+// ── Inspector panel ────────────────────────────────────────────────────────────
+
+.nva-inspector-panel {
+  width: 240px;
+  border-left: 1px solid var(--nva-border);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+
+  .nva-inspector-header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--nva-border);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--nva-navy);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .nva-inspector-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+  }
+
+  .nva-inspector-empty {
+    font-size: 12px;
+    color: var(--nva-muted);
+    line-height: 1.6;
+    text-align: center;
+    padding: 16px 0;
+  }
+}
+
+.nva-tool-entry {
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  background: var(--nva-surface);
+  border: 1px solid var(--nva-border);
+  border-radius: 8px;
+  font-size: 11px;
+
+  .nva-tool-agent {
+    font-weight: 700;
+    color: var(--nva-navy);
+    margin-bottom: 2px;
+    text-transform: capitalize;
+  }
+
+  .nva-tool-name {
+    color: var(--nva-muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+// ── Admin dialog overrides ────────────────────────────────────────────────────
+
+.mat-mdc-dialog-container {
+  --mdc-dialog-container-shape: 16px;
+}
+
+.nva-admin-dialog {
+  h2[mat-dialog-title] {
+    color: var(--nva-navy);
+    font-size: 18px;
+    font-weight: 700;
+    padding: 20px 24px 0;
+  }
+}
+
+// ── Responsive mat-form-field tweaks ─────────────────────────────────────────
+
+mat-form-field {
+  .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
+}
+
+mat-form-field[subscriptSizing="dynamic"] {
+  .mat-mdc-form-field-subscript-wrapper {
+    display: block;
+  }
 }

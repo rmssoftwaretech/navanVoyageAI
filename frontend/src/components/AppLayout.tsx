@@ -21,6 +21,7 @@ interface AppLayoutProps {
   onSetContext?: () => void
   hasContext?: boolean
   onRenameConversation?: (id: string, title: string) => void
+  onDeleteConversation?: (id: string) => void
   panelMode?: boolean
   onPanelModeToggle?: () => void
   debugMode: boolean
@@ -41,6 +42,7 @@ export default function AppLayout({
   onSetContext,
   hasContext,
   onRenameConversation,
+  onDeleteConversation,
   panelMode = false,
   onPanelModeToggle,
   debugMode,
@@ -136,6 +138,7 @@ export default function AppLayout({
           onSetContext={onSetContext}
           hasContext={hasContext}
           onRename={onRenameConversation}
+          onDelete={onDeleteConversation}
         />
 
         {/* Main column: chat area + bottom inspector */}

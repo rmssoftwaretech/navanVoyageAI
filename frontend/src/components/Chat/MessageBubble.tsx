@@ -35,7 +35,7 @@ interface MessageBubbleProps {
   debugMode?: boolean
   onRetry?: (content: string) => void
   onSelectFlight?: (flight: FlightResult) => void
-  onStarChange?: (conversationId: string, hasStarred: boolean) => void
+  onStarChange?: (conversationId: string, hasStarred: boolean, turnIndex: number) => void
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -444,7 +444,7 @@ export default function MessageBubble({ turn, turnIndex, conversationId, isStrea
     setStarred(next)
     if (conversationId && turnIndex != null) {
       await starTurn(conversationId, turnIndex, next).catch(() => {})
-      onStarChange?.(conversationId, next)
+      onStarChange?.(conversationId, next, turnIndex)
     }
   }
 
@@ -587,14 +587,14 @@ export default function MessageBubble({ turn, turnIndex, conversationId, isStrea
           {/* Perf metrics */}
           {turn.perf && <PerfBar perf={turn.perf} />}
 
-          {/* Reaction bar — on hover */}
-          {hovered && (
-            <ReactionBar
-              conversationId={conversationId}
-              turnIndex={turnIndex}
-              initial={turn.reactions}
-            />
-          )}
+          {/* Reaction bar — always visible, star button included */}
+          <ReactionBar
+            conversationId={conversationId}
+            turnIndex={turnIndex}
+            initial={turn.reactions}
+            starred={starred}
+            onStar={handleStar}
+          />
 
           {/* Footer row: timestamp + copy + note + star + feedback */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
@@ -621,20 +621,6 @@ export default function MessageBubble({ turn, turnIndex, conversationId, isStrea
               {!hovered && savedNote && (
                 <span title={savedNote.note} style={{ fontSize: 10, color: 'var(--gold, #D97706)', cursor: 'pointer' }} onClick={() => setNoteOpen(true)}>✏ ●</span>
               )}
-              {/* Star button */}
-              <button
-                onClick={handleStar}
-                title={starred ? 'Unstar this message' : 'Star this message'}
-                style={{
-                  padding: '2px 6px', fontSize: 14, lineHeight: 1,
-                  color: starred ? '#D97706' : hovered ? 'var(--text-muted)' : 'transparent',
-                  background: starred ? 'rgba(217,119,6,0.08)' : 'transparent',
-                  border: `1px solid ${starred ? 'rgba(217,119,6,0.4)' : 'transparent'}`,
-                  borderRadius: 'var(--r-sm)', cursor: 'pointer', transition: 'all 0.15s',
-                }}
-              >
-                {starred ? '⭐' : '☆'}
-              </button>
             </div>
             <FeedbackBar conversationId={conversationId} turnIndex={turnIndex} />
           </div>

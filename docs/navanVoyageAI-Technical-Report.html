@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>navanVoyageAI — Technical Report</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1E3A5F;
+    --navy-light: #2A4F7C;
+    --gold: #D97706;
+    --gold-light: #F59E0B;
+    --text: #1a1a2e;
+    --text-muted: #4B5563;
+    --border: #CBD5E0;
+    --bg-alt: #F8FAFC;
+    --bg-code: #EFF6FF;
+    --font: 'IBM Plex Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); color: var(--text); font-size: 11pt; line-height: 1.65; background: #fff; }
+
+  /* ── Page layout ── */
+  @page { size: A4 portrait; margin: 22mm 20mm 20mm 22mm; }
+  @media print {
+    body { font-size: 10.5pt; }
+    .no-print { display: none !important; }
+    .page-break { break-before: page; page-break-before: always; }
+    .avoid-break { break-inside: avoid; page-break-inside: avoid; }
+    a { color: inherit; text-decoration: none; }
+  }
+  @media screen {
+    body { max-width: 210mm; margin: 0 auto; padding: 20mm; background: #f0f4f8; }
+    .page { background: #fff; padding: 22mm 20mm 20mm 22mm; margin-bottom: 8mm; box-shadow: 0 2px 12px rgba(0,0,0,0.12); }
+    .page-break { margin-top: 0; }
+  }
+  .page { min-height: 257mm; }
+
+  /* ── Typography ── */
+  h1 { font-size: 26pt; font-weight: 700; color: var(--navy); line-height: 1.2; }
+  h2 { font-size: 17pt; font-weight: 700; color: var(--navy); margin-top: 22pt; margin-bottom: 8pt; border-bottom: 2px solid var(--gold); padding-bottom: 4pt; }
+  h3 { font-size: 13pt; font-weight: 600; color: var(--navy-light); margin-top: 14pt; margin-bottom: 6pt; }
+  h4 { font-size: 11pt; font-weight: 600; color: var(--navy); margin-top: 10pt; margin-bottom: 4pt; }
+  p { margin-bottom: 9pt; }
+  ul, ol { margin: 6pt 0 9pt 18pt; }
+  li { margin-bottom: 3pt; }
+  strong { font-weight: 600; color: var(--navy); }
+  em { color: var(--text-muted); }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; margin: 10pt 0 14pt; font-size: 10pt; }
+  th { background: var(--navy); color: #fff; font-weight: 600; padding: 6pt 8pt; text-align: left; font-size: 9.5pt; }
+  td { padding: 5pt 8pt; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: var(--bg-alt); }
+  tr:hover td { background: #EBF4FF; }
+
+  /* ── Code ── */
+  code { font-family: var(--mono); font-size: 9pt; background: var(--bg-code); padding: 1pt 4pt; border-radius: 3pt; color: #1a3a6e; }
+  pre { font-family: var(--mono); font-size: 9pt; background: #0f172a; color: #e2e8f0; padding: 10pt 12pt; border-radius: 4pt; overflow-x: auto; margin: 8pt 0 12pt; line-height: 1.5; }
+  pre .kw { color: #7dd3fc; }
+  pre .str { color: #86efac; }
+  pre .cm { color: #64748b; }
+  pre .cn { color: #fda4af; }
+
+  /* ── Callout boxes ── */
+  .callout { border-left: 4px solid var(--gold); background: #FFFBEB; padding: 8pt 12pt; margin: 10pt 0; border-radius: 0 4pt 4pt 0; }
+  .callout-navy { border-left: 4px solid var(--navy); background: var(--bg-alt); padding: 8pt 12pt; margin: 10pt 0; border-radius: 0 4pt 4pt 0; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* ── Arch diagram ── */
+  .arch { font-family: var(--mono); font-size: 8.5pt; background: #0f172a; color: #94a3b8; padding: 12pt; border-radius: 4pt; white-space: pre; overflow-x: auto; margin: 10pt 0 14pt; line-height: 1.6; }
+  .arch .hl { color: #7dd3fc; }
+  .arch .gl { color: #86efac; }
+  .arch .yl { color: #fde68a; }
+
+  /* ── Cover ── */
+  .cover { display: flex; flex-direction: column; justify-content: space-between; min-height: 250mm; }
+  .cover-top { border-bottom: 3px solid var(--gold); padding-bottom: 18pt; }
+  .cover-badge { display: inline-block; background: var(--navy); color: var(--gold); font-size: 9pt; font-weight: 600; padding: 4pt 12pt; border-radius: 2pt; margin-bottom: 14pt; letter-spacing: 0.08em; text-transform: uppercase; }
+  .cover h1 { font-size: 32pt; color: var(--navy); margin-bottom: 6pt; }
+  .cover .subtitle { font-size: 15pt; color: var(--text-muted); font-weight: 300; margin-bottom: 18pt; }
+  .cover .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8pt 18pt; margin-top: 18pt; }
+  .cover .meta-item { }
+  .cover .meta-label { font-size: 8pt; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
+  .cover .meta-value { font-size: 11pt; color: var(--navy); font-weight: 500; }
+  .cover-footer { font-size: 9pt; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 10pt; }
+
+  /* ── TOC ── */
+  .toc-entry { display: flex; align-items: baseline; gap: 4pt; margin-bottom: 4pt; }
+  .toc-entry .tnum { min-width: 22pt; color: var(--gold); font-weight: 600; }
+  .toc-entry .tttl { flex: 1; }
+  .toc-entry .dots { flex: 1; border-bottom: 1px dotted var(--border); margin: 0 4pt; min-width: 20pt; }
+  .toc-entry .tpg { min-width: 18pt; text-align: right; color: var(--text-muted); font-size: 10pt; }
+  .toc-section { margin-top: 10pt; }
+  .toc-section-head { font-weight: 700; color: var(--navy); font-size: 10pt; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4pt; }
+
+  /* ── Metrics grid ── */
+  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10pt; margin: 10pt 0 14pt; }
+  .metric-card { background: var(--navy); color: #fff; padding: 10pt 12pt; border-radius: 4pt; }
+  .metric-card .mv { font-size: 22pt; font-weight: 700; color: var(--gold-light); line-height: 1.1; }
+  .metric-card .ml { font-size: 9pt; color: #93C5FD; margin-top: 2pt; }
+
+  /* ── Footer ── */
+  .page-footer { margin-top: 18pt; padding-top: 8pt; border-top: 1px solid var(--border); font-size: 8.5pt; color: var(--text-muted); display: flex; justify-content: space-between; }
+  .section-num { color: var(--gold); font-weight: 600; }
+
+  /* ── Pill badges ── */
+  .pill { display: inline-block; padding: 1pt 7pt; border-radius: 20pt; font-size: 8.5pt; font-weight: 600; }
+  .pill-navy { background: var(--navy); color: #fff; }
+  .pill-gold { background: var(--gold); color: #fff; }
+  .pill-green { background: #065F46; color: #fff; }
+  .pill-gray { background: #E5E7EB; color: #374151; }
+
+  /* ── Two-col layout ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14pt; }
+  .two-col-3-2 { display: grid; grid-template-columns: 3fr 2fr; gap: 14pt; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     COVER PAGE
+══════════════════════════════════════════════════════════════════ -->
+<div class="page">
+<div class="cover">
+  <div class="cover-top">
+    <div class="cover-badge">CMU Capstone Demo · 2026</div>
+    <h1>navanVoyageAI</h1>
+    <div class="subtitle">Corporate Travel Multi-Agent AI Platform<br>Technical Report &amp; System Documentation</div>
+
+    <div class="arch" style="margin-top:18pt;">
+<span class="hl">                ┌─────────────────────────────────┐
+                │   nginx · localhost:3010        │
+                │   /       → frontend:5210       │
+                │   /api/   → backend:8100        │
+                └──────────────┬──────────────────┘</span>
+                               │
+            ┌──────────────────┴────────────────────┐
+            │                                       │
+  <span class="gl">┌─────────────────┐</span>             <span class="yl">┌─────────────────────┐</span>
+  <span class="gl">│ Frontend        │</span>  ←─ SSE ──► <span class="yl">│ Backend (FastAPI)   │</span>
+  <span class="gl">│ Vite · React 18 │</span>             <span class="yl">│ port 8100           │</span>
+  <span class="gl">└─────────────────┘</span>             <span class="yl">└──────┬──────────────┘</span>
+                                         │
+               ┌─────────────────────────┼──────────────────────┐
+               │                         │                      │
+   <span class="hl">┌────────────▼───┐  ┌────────────▼───┐  ┌────────▼───────┐</span>
+   <span class="hl">│  MongoDB       │  │  MCP Sidecars  │  │  Azure OpenAI  │</span>
+   <span class="hl">│  nva_db        │  │  8101 Amadeus  │  │  (+ Opus opt.) │</span>
+   <span class="hl">│  port 27117    │  │  8102 Car Rent │  └────────────────┘</span>
+   <span class="hl">└────────────────┘  │  8103 Hotels   │</span>
+                      <span class="hl">└────────────────┘</span></div>
+
+    <div class="meta-grid">
+      <div class="meta-item"><div class="meta-label">Platform</div><div class="meta-value">navanVoyageAI v1.0</div></div>
+      <div class="meta-item"><div class="meta-label">Program</div><div class="meta-value">CMU MSIT Capstone 2026</div></div>
+      <div class="meta-item"><div class="meta-label">Architecture</div><div class="meta-value">Multi-Agent + MCP + SSE</div></div>
+      <div class="meta-item"><div class="meta-label">Date</div><div class="meta-value">June 2026</div></div>
+      <div class="meta-item"><div class="meta-label">LLM Provider</div><div class="meta-value">Azure OpenAI + Anthropic (opt.)</div></div>
+      <div class="meta-item"><div class="meta-label">Repo</div><div class="meta-value">github.com/rmssoftwaretech/navanVoyageAI</div></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="metrics" style="margin-top:18pt;">
+      <div class="metric-card"><div class="mv">6</div><div class="ml">Specialized AI Agents</div></div>
+      <div class="metric-card"><div class="mv">3</div><div class="ml">MCP Tool Sidecars</div></div>
+      <div class="metric-card"><div class="mv">88k+</div><div class="ml">Mock Travel Records</div></div>
+      <div class="metric-card"><div class="mv">12</div><div class="ml">Admin Console Tabs</div></div>
+      <div class="metric-card"><div class="mv">3</div><div class="ml">Frontend UI Variants</div></div>
+      <div class="metric-card"><div class="mv">41</div><div class="ml">REST API Endpoints</div></div>
+    </div>
+  </div>
+
+  <div class="cover-footer">
+    <span>navanVoyageAI · Technical Report</span>
+    <span>Confidential · CMU Capstone Demo · 2026</span>
+    <span>Page 1</span>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     TABLE OF CONTENTS
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h2 style="margin-top:0;">Table of Contents</h2>
+
+<div class="toc-section">
+  <div class="toc-section-head">Overview</div>
+  <div class="toc-entry"><span class="tnum">1</span><span class="tttl">Executive Summary</span><span class="dots"></span><span class="tpg">3</span></div>
+  <div class="toc-entry"><span class="tnum">2</span><span class="tttl">Project Background &amp; Motivation</span><span class="dots"></span><span class="tpg">4</span></div>
+  <div class="toc-entry"><span class="tnum">3</span><span class="tttl">System Architecture Overview</span><span class="dots"></span><span class="tpg">5</span></div>
+</div>
+
+<div class="toc-section">
+  <div class="toc-section-head">Core AI Framework</div>
+  <div class="toc-entry"><span class="tnum">4</span><span class="tttl">Multi-Agent Framework</span><span class="dots"></span><span class="tpg">6</span></div>
+  <div class="toc-entry"><span class="tnum">5</span><span class="tttl">Tree of Thought Reasoning</span><span class="dots"></span><span class="tpg">8</span></div>
+  <div class="toc-entry"><span class="tnum">6</span><span class="tttl">Model Context Protocol (MCP) Architecture</span><span class="dots"></span><span class="tpg">9</span></div>
+  <div class="toc-entry"><span class="tnum">7</span><span class="tttl">Memory Architecture</span><span class="dots"></span><span class="tpg">11</span></div>
+</div>
+
+<div class="toc-section">
+  <div class="toc-section-head">Business Logic</div>
+  <div class="toc-entry"><span class="tnum">8</span><span class="tttl">Corporate Policy Engine</span><span class="dots"></span><span class="tpg">12</span></div>
+  <div class="toc-entry"><span class="tnum">9</span><span class="tttl">Chat Interface &amp; Search Pipeline</span><span class="dots"></span><span class="tpg">14</span></div>
+  <div class="toc-entry"><span class="tnum">10</span><span class="tttl">Booking System</span><span class="dots"></span><span class="tpg">16</span></div>
+</div>
+
+<div class="toc-section">
+  <div class="toc-section-head">Platform &amp; Operations</div>
+  <div class="toc-entry"><span class="tnum">11</span><span class="tttl">Admin Console (12 Tabs)</span><span class="dots"></span><span class="tpg">18</span></div>
+  <div class="toc-entry"><span class="tnum">12</span><span class="tttl">LLM Observability &amp; Evaluation</span><span class="dots"></span><span class="tpg">20</span></div>
+  <div class="toc-entry"><span class="tnum">13</span><span class="tttl">Data Architecture &amp; Mock Datasets</span><span class="dots"></span><span class="tpg">22</span></div>
+  <div class="toc-entry"><span class="tnum">14</span><span class="tttl">REST API Reference</span><span class="dots"></span><span class="tpg">24</span></div>
+  <div class="toc-entry"><span class="tnum">15</span><span class="tttl">Infrastructure &amp; Deployment</span><span class="dots"></span><span class="tpg">26</span></div>
+  <div class="toc-entry"><span class="tnum">16</span><span class="tttl">Technology Stack Summary</span><span class="dots"></span><span class="tpg">28</span></div>
+  <div class="toc-entry"><span class="tnum">17</span><span class="tttl">Conclusion &amp; Future Work</span><span class="dots"></span><span class="tpg">30</span></div>
+</div>
+
+<div class="page-footer">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>Table of Contents</span>
+  <span>Page 2</span>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §1 EXECUTIVE SUMMARY
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h2 style="margin-top:0;"><span class="section-num">§1</span> Executive Summary</h2>
+
+<p><strong>navanVoyageAI</strong> is a corporate travel multi-agent AI platform built as a CMU Capstone demonstration. It combines large language model orchestration, Model Context Protocol (MCP) tool sidecars, real-time streaming, a complete booking workflow, and a twelve-tab administrator console — all deployed as seven Docker services behind an nginx reverse proxy.</p>
+
+<p>The platform answers a straightforward business question: <em>can a conversational AI system replace a traditional corporate travel portal without sacrificing policy compliance, auditability, or operational visibility?</em> navanVoyageAI's answer is yes — by decomposing the travel workflow into six collaborating AI agents that each own a specific domain (search, policy, destination intelligence, booking, evaluation, and orchestration), and by surfacing every LLM decision through structured SSE event streams that feed directly into real-time admin dashboards.</p>
+
+<div class="callout">
+  <strong>Key Result:</strong> A traveller can type "I need a business class flight from JFK to London next Tuesday, a hotel in Mayfair, and a mid-size car" in a single message and receive a fully parallel response — flight options, hotel cards, car results, UK visa advisory, weather, and a corporate policy verdict — all within one streaming turn, with every agent action logged and scored by an asynchronous judge.
+</div>
+
+<h3>Platform Highlights</h3>
+<div class="two-col">
+<div>
+  <h4>AI &amp; Reasoning</h4>
+  <ul>
+    <li>Six specialized agents running on Azure OpenAI (gpt-4o / gpt-5.4) with optional Anthropic Claude Opus for evaluation</li>
+    <li>Tree of Thought reasoning for complex, multi-constraint queries</li>
+    <li>Dual memory layer: sliding-window short-term + MongoDB-backed long-term user memory</li>
+    <li>Asynchronous JudgeAgent scoring each response on five criteria</li>
+  </ul>
+</div>
+<div>
+  <h4>Architecture</h4>
+  <ul>
+    <li>Three FastMCP sidecars exposing 9 travel tools over HTTP</li>
+    <li>Server-Sent Events (SSE) for token-by-token streaming and agent lifecycle events</li>
+    <li>Seven Docker Compose services with a single-command boot</li>
+    <li>Three frontend variants: Tailwind CSS, Adobe React Spectrum S2, Angular Material M3</li>
+  </ul>
+</div>
+</div>
+
+<h3>Platform Metrics at a Glance</h3>
+<table>
+  <tr><th>Dimension</th><th>Value</th><th>Notes</th></tr>
+  <tr><td>AI Agents</td><td>6</td><td>Orchestrator, Search, Policy, Destination, Booking, Judge</td></tr>
+  <tr><td>MCP Tool Sidecars</td><td>3</td><td>Amadeus (flights), Car Rental, Hotel Booking</td></tr>
+  <tr><td>MCP Tools</td><td>9</td><td>search_flights, search_cars, book_car, cancel_car, search_hotels, book_hotel, cancel_hotel + 2 reserved</td></tr>
+  <tr><td>Mock Travel Records</td><td>88,488</td><td>36,288 flights · 39,600 hotels · 12,600 cars</td></tr>
+  <tr><td>Admin Console Tabs</td><td>12</td><td>Full ops visibility from a single modal</td></tr>
+  <tr><td>REST API Endpoints</td><td>41</td><td>15 chat/auth, 26 admin</td></tr>
+  <tr><td>Corporate Policies</td><td>6</td><td>Standard, International, Executive, Company Exec, Sales Exec, Conference</td></tr>
+  <tr><td>Frontend Variants</td><td>3</td><td>Tailwind (5210), Spectrum S2 (5211), Angular M3 (4210)</td></tr>
+  <tr><td>LLM Providers</td><td>4</td><td>Azure OpenAI (default), Anthropic, OpenAI, Ollama</td></tr>
+  <tr><td>Judge Criteria</td><td>5</td><td>Accuracy, Policy Compliance, Helpfulness, Tone, Safety</td></tr>
+</table>
+
+<div class="page-footer">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>§1 Executive Summary</span>
+  <span>Page 3</span>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §2 PROJECT BACKGROUND
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h2 style="margin-top:0;"><span class="section-num">§2</span> Project Background &amp; Motivation</h2>
+
+<h3>Problem Statement</h3>
+<p>Corporate travel management is a domain where policy compliance, cost control, and traveller experience are perpetually in tension. Legacy travel booking portals present employees with long search forms, opaque policy gates, and disconnected approval workflows. When a traveller wants to book a complex multi-leg international trip with hotel and car, they typically interact with three or four separate systems, consult an HR policy document, and submit to a manual approval chain that introduces days of latency.</p>
+
+<p>The navanVoyageAI project asks: <em>what if a conversational AI assistant understood corporate travel policy as deeply as a seasoned travel manager, could search flights, hotels, and cars in parallel, and explained policy decisions in plain language — all in a single chat turn?</em></p>
+
+<h3>Academic Context</h3>
+<p>navanVoyageAI is built as the CMU Capstone demonstration for the MSIT program, class of 2026. The capstone brief required a platform that:</p>
+<ul>
+  <li>Demonstrates a complete multi-agent AI system with at least four cooperating agents</li>
+  <li>Integrates with external tool APIs via a structured protocol</li>
+  <li>Shows real-time LLM evaluation and observability</li>
+  <li>Provides a production-credible deployment story (Docker, nginx, CI)</li>
+  <li>Is demonstrable in a 20-minute live demo session</li>
+</ul>
+
+<h3>Relationship to EnterpriseDataAgent</h3>
+<p>navanVoyageAI is a standalone sibling project to the <code>EnterpriseDataAgent</code> platform. It reuses the base multi-agent architecture patterns (BaseAgent ABC, AgentContext/AgentResult contracts, SSE streaming pipeline) but is a fully independent codebase targeting the travel domain. The two repos share no runtime dependencies — navanVoyageAI uses its own MongoDB database (<code>nva_db</code>), its own Docker network (<code>nva-net</code>), and its own port range (5210–5211, 4210, 8100–8103, 27117).</p>
+
+<h3>Design Principles</h3>
+<div class="two-col">
+<div>
+  <h4>Separation of Concerns</h4>
+  <p>Each agent owns exactly one domain. The OrchestratorAgent routes but never searches; the PolicyAgent enforces rules but never fetches prices; the JudgeAgent evaluates but never responds to the user. This makes each agent independently testable and replaceable.</p>
+
+  <h4>Deterministic Policy</h4>
+  <p>Policy checks are deterministic Python — no LLM call, no ambiguity. A business class ticket either violates the $3,000 price cap or it does not. This design ensures auditability and eliminates hallucinated policy decisions.</p>
+</div>
+<div>
+  <h4>Full Observability</h4>
+  <p>Every MCP tool call, every agent token, every latency measurement, every policy verdict, and every judge score is captured and surfaced through the admin console. Nothing happens in a black box.</p>
+
+  <h4>Demo-First UX</h4>
+  <p>The platform is designed around five specific demo scenarios that can each be completed in under three minutes. The UI surfaces the most visually compelling moments — parallel agent badges, MCP tool call cards, Tree of Thought branch comparison, booking wizard steps — to communicate architectural sophistication to a non-technical audience.</p>
+</div>
+</div>
+
+<h3>Sprint Delivery Summary</h3>
+<table>
+  <tr><th>Sprint</th><th>Theme</th><th>Stories</th><th>Points</th></tr>
+  <tr><td>NVA-A</td><td>Foundation — scaffold, login, chat, MCP Inspector</td><td>NVA-21, NVA-00, NVA-01, NVA-02, NVA-03</td><td>13</td></tr>
+  <tr><td>NVA-B</td><td>Backend Core — DB, agents, Amadeus MCP</td><td>NVA-08 to NVA-12</td><td>15</td></tr>
+  <tr><td>NVA-C</td><td>Admin + Booking — BookingAgent, JudgeAgent, Admin shell</td><td>NVA-13 to NVA-07</td><td>13</td></tr>
+  <tr><td>NVA-D</td><td>Eval + Observability + Tree of Thought</td><td>NVA-15, NVA-16, NVA-17</td><td>11</td></tr>
+  <tr><td>NVA-E</td><td>Memory + Chat History</td><td>NVA-18, NVA-19, NVA-20</td><td>10</td></tr>
+  <tr><td>NVA-F</td><td>Car Rental + Hotel MCP Sidecars</td><td>NVA-38</td><td>8</td></tr>
+</table>
+
+<div class="page-footer">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>§2 Project Background</span>
+  <span>Page 4</span>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §3 SYSTEM ARCHITECTURE
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h2 style="margin-top:0;"><span class="section-num">§3</span> System Architecture Overview</h2>
+
+<h3>Deployment Topology</h3>
+<p>navanVoyageAI deploys as seven Docker Compose services on a single host, unified under an nginx reverse proxy that exposes a single entry point at <code>http://localhost:3010</code>. All inter-service communication happens on the private <code>nva-net</code> bridge network using Docker DNS names.</p>
+
+<div class="arch">
+  Browser → <span class="hl">nginx:3010</span>
+      │
+      ├── /          → <span class="gl">frontend:5210</span>       (Tailwind CSS primary UI)
+      ├── /api/      → <span class="yl">backend:8100</span>        (FastAPI — JWT + SSE)
+      │
+  backend:8100 → <span class="hl">amadeus-mcp:8101</span>    (FastMCP · search_flights)
+              → <span class="cn">car-rental-mcp:8102</span> (FastMCP · search/book/cancel cars)
+              → <span class="cn">hotel-booking-mcp:8103</span> (FastMCP · search/book/cancel hotels)
+              → <span class="yl">mongodb:27117</span>       (nva_db)
+              → Azure OpenAI API   (gpt-4o, gpt-5.4)
+              → Anthropic API      (claude-opus-4-7, optional)</div>
+
+<h3>Service Inventory</h3>
+<table>
+  <tr><th>Service</th><th>Container Name</th><th>Port</th><th>Technology</th><th>Role</th></tr>
+  <tr><td>nginx</td><td>nva-nginx</td><td>3010</td><td>nginx:alpine</td><td>Reverse proxy, TLS termination</td></tr>
+  <tr><td>Frontend (primary)</td><td>nva-frontend</td><td>5210</td><td>Vite + React 18 + Tailwind</td><td>Navy/gold chat UI</td></tr>
+  <tr><td>Frontend (Spectrum)</td><td>nva-frontend-spectrum</td><td>5211</td><td>Vite + React 19 + Spectrum S2</td><td>Adobe design system variant</td></tr>
+  <tr><td>Frontend (Angular)</td><td>nva-frontend-angular</td><td>4210</td><td>Angular 18 + Material M3</td><td>Violet M3 theme variant</td></tr>
+  <tr><td>Backend</td><td>nva-backend</td><td>8100</td><td>FastAPI + Motor</td><td>API gateway, agent pipeline, SSE</td></tr>
+  <tr><td>Amadeus MCP</td><td>amadeus-mcp</td><td>8101</td><td>FastMCP 3.4.2</td><td>Flight search (36k records)</td></tr>
+  <tr><td>Car Rental MCP</td><td>car-rental-mcp</td><td>8102</td><td>FastMCP 3.4.2</td><td>Car search/book/cancel</td></tr>
+  <tr><td>Hotel Booking MCP</td><td>hotel-booking-mcp</td><td>8103</td><td>FastMCP 3.4.2</td><td>Hotel search/book/cancel</td></tr>
+  <tr><td>MongoDB</td><td>nva-mongodb</td><td>27117</td><td>MongoDB 7</td><td>nva_db — 7 collections</td></tr>
+</table>
+
+<h3>Request Flow — Chat Turn</h3>
+<p>A single chat message traverses the following path from browser to LLM and back:</p>
+
+<ol>
+  <li><strong>POST /api/chat/message</strong> — JWT-authenticated request lands at the FastAPI backend. The request body carries <code>conversation_id</code>, <code>message</code>, and optional <code>session_context</code>.</li>
+  <li><strong>SSE Response Stream opens</strong> — the backend switches immediately to an <code>EventSourceResponse</code>. The client begins receiving events before any agent has produced a token.</li>
+  <li><strong>Short-Term Memory load</strong> — the last 5 conversation turns are retrieved from <code>nva_conversations</code> and summarised by Claude Haiku into a compact context block.</li>
+  <li><strong>Long-Term Memory retrieval</strong> — any stored user preferences (preferred airline, seat class, frequent flyer) are fetched from <code>nva_user_memory</code> and prepended to the Orchestrator prompt.</li>
+  <li><strong>OrchestratorAgent</strong> — classifies the intent, selects which downstream agents to invoke, and (for complex queries) runs Tree of Thought to decide the best response strategy. Emits <code>agent_start</code> and <code>token</code> SSE events.</li>
+  <li><strong>Parallel dispatch</strong> — SearchAgent, PolicyAgent, and DestinationAgent run concurrently via <code>asyncio.gather</code>. Each emits its own <code>agent_start</code>, MCP tool call events, and <code>agent_done</code> events.</li>
+  <li><strong>MCP tool calls</strong> — SearchAgent opens FastMCP <code>Client</code> connections to the three sidecars, calls tools, and receives structured JSON responses. Each call emits <code>mcp_tool_call</code> and <code>mcp_tool_result</code> SSE events that feed the MCP Inspector panel.</li>
+  <li><strong>BookingAgent</strong> — activates only when a booking confirmation is requested; generates NVA reference numbers and writes to <code>nva_bookings</code>.</li>
+  <li><strong>Response aggregation</strong> — the Orchestrator collects all agent results, merges them into a single coherent reply, and streams it token-by-token to the client.</li>
+  <li><strong>JudgeAgent (async)</strong> — fires after the <code>agent_done</code> event; evaluates the complete exchange asynchronously; writes a 5-criteria score to <code>nva_eval_scores</code>. Does not block the user-visible response.</li>
+  <li><strong>Audit logging</strong> — every agent action, tool call, and policy verdict is written to <code>nva_audit_log</code> for later review in the Admin console.</li>
+</ol>
+
+<div class="page-footer">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>§3 System Architecture</span>
+  <span>Page 5</span>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §4 MULTI-AGENT FRAMEWORK
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h2 style="margin-top:0;"><span class="section-num">§4</span> Multi-Agent Framework</h2>
+
+<h3>Agent Design Philosophy</h3>
+<p>Every agent in navanVoyageAI inherits from <code>BaseAgent</code>, a Python abstract base class that enforces a common interface: each agent receives an <code>AgentContext</code> (message, conversation history, session entities, user profile) and returns an <code>AgentResult</code> (content string, metadata dict, agent name). This contract allows the Orchestrator to treat all agents uniformly while each agent implements its own domain logic in the <code>run()</code> method.</p>
+
+<pre>
+<span class="cm"># backend/application/agent/base.py — simplified</span>
+<span class="kw">class</span> AgentContext:
+    message: str
+    history: list[dict]
+    session_context: dict        <span class="cm"># entities, short-term memory</span>
+    user_profile: dict           <span class="cm"># long-term memory from nva_user_memory</span>
+
+<span class="kw">class</span> AgentResult:
+    agent: str
+    content: str
+    metadata: dict               <span class="cm"># mcp_events, params, scores, etc.</span>
+
+<span class="kw">class</span> BaseAgent(ABC):
+    name: str
+    <span class="kw">async def</span> run(self, context: AgentContext) → AgentResult: ...
+    <span class="kw">async def</span> _chat(self, system: str, user: str) → str:
+        <span class="cm"># Routes to Azure/Anthropic/OpenAI/Ollama via agents.json provider field</span>
+</pre>
+
+<h3>Agent Roster</h3>
+<table>
+  <tr><th>Agent</th><th>Model</th><th>Temp</th><th>Max Tokens</th><th>Streaming</th><th>Domain</th></tr>
+  <tr><td><strong>OrchestratorAgent</strong></td><td>azure/gpt-4o</td><td>0.3</td><td>2048</td><td>Yes</td><td>Intent, routing, ToT, aggregation</td></tr>
+  <tr><td><strong>SearchAgent</strong></td><td>azure/gpt-5.4</td><td>0.1</td><td>1024</td><td>No</td><td>Parameter extraction + MCP tool calls</td></tr>
+  <tr><td><strong>PolicyAgent</strong></td><td>azure-openai</td><td>0.0</td><td>512</td><td>No</td><td>Deterministic corporate rule engine</td></tr>
+  <tr><td><strong>DestinationAgent</strong></td><td>azure/gpt-5.4</td><td>0.5</td><td>1024</td><td>No</td><td>Visa, weather, local tips, timezone</td></tr>
+  <tr><td><strong>BookingAgent</strong></td><td>azure/gpt-5.4</td><td>0.1</td><td>512</td><td>No</td><td>Booking creation/cancellation</td></tr>
+  <tr><td><strong>JudgeAgent</strong></td><td>azure-openai (+ Opus opt.)</td><td>0.0</td><td>1024</td><td>No</td><td>5-criteria evaluation scoring</td></tr>
+</table>
+
+<h3>OrchestratorAgent</h3>
+<p>The OrchestratorAgent is the entry point for every conversation turn. Its responsibilities are:</p>
+<ul>
+  <li><strong>Intent classification</strong> — determines whether the query requires flight search, hotel search, car rental, booking actions, destination information, or a combination thereof.</li>
+  <li><strong>Complexity gate</strong> — if the query scores above the complexity threshold (multiple destinations, constraint conflicts, itinerary optimisation), it triggers the Tree of Thought sub-strategy before dispatching.</li>
+  <li><strong>Parallel dispatch</strong> — launches SearchAgent, PolicyAgent, and DestinationAgent concurrently using <code>asyncio.gather</code>; the combined wall-clock time is the slowest agent, not their sum.</li>
+  <li><strong>Response synthesis</strong> — receives all AgentResults, merges the content sections, applies the session context, and streams the final response to the SSE consumer.</li>
+  <li><strong>Token streaming</strong> — alone among agents, the Orchestrator uses streaming LLM calls to emit <code>token</code> SSE events that drive the animated typing indicator in the UI.</li>
+</ul>
+
+<h3>SearchAgent</h3>
+<p>The SearchAgent operates in two phases. First, it calls an LLM (gpt-5.4, temp=0.1) with a structured extraction prompt to parse the user message into a typed parameter object: origin IATA, destination IATA, depart date, cabin class, hotel city, check-in/check-out, car city, pickup/return dates, and vehicle class. Second, it calls the appropriate MCP sidecars in parallel based on which parameter groups are populated (<code>search_flights</code> if origin+destination+date present; <code>search_hotels</code> if <code>search_hotels=true</code>; <code>search_cars</code> if <code>search_cars=true</code>).</p>
+
+<h3>PolicyAgent</h3>
+<p>The PolicyAgent is deliberately LLM-free. It receives the SearchAgent's raw results and applies a deterministic Python rule engine against the six loaded corporate policies. Each policy defines hard limits for flight price, hotel nightly rate, car daily rate, cabin class, hotel tier, and car class. The agent returns a <code>PolicyVerdict</code> with three fields: <code>compliant: bool</code>, <code>violations: list[str]</code>, and <code>suggestions: list[str]</code>. Violations are surfaced in the UI as amber warning badges on the relevant search result cards.</p>
+
+<h3>DestinationAgent</h3>
+<p>The DestinationAgent generates a structured JSON briefing for each destination city in the query. The briefing covers: visa requirements (by employee nationality from the employee record), current weather season and typical temperature range, local timezone and UTC offset, currency and rough exchange rate, cultural tips relevant to business travel, and any active travel advisories. The agent uses gpt-5.4 at temperature 0.5 to allow varied but accurate descriptions.</p>
+
+<h3>BookingAgent</h3>
+<p>The BookingAgent handles create and cancel operations for flight bookings. It generates a globally unique <code>NVA-YYYY-NNNNN</code> reference number, writes the booking record to <code>nva_bookings</code>, emits an <code>agent_start</code> SSE event, and returns a confirmation payload that the UI uses to display the booking success screen. The BookingAgent does not call MCP tools for booking creation — it treats the pre-searched flight data as authoritative and writes directly to MongoDB, reflecting the mock nature of the Amadeus dataset.</p>
+
+<h3>JudgeAgent</h3>
+<p>The JudgeAgent runs asynchronously after the user-facing response is complete. It is invoked as a fire-and-forget coroutine so it never adds latency to the turn. It receives the full exchange (user message + assistant response + agent metadata) and calls an LLM with a structured evaluation prompt that produces five numeric scores (1–5) and a brief rationale for each. The scores are written to <code>nva_eval_scores</code> and surfaced in the Eval Metrics admin tab.</p>
+
+<div class="page-footer">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>§4 Multi-Agent Framework</span>
+  <span>Page 6</span>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §4 continued — Agent Dispatch + Provider Routing
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h3>Agent Dispatch Pipeline (Detail)</h3>
+
+<div class="arch">
+User message
+  │
+  ▼
+<span class="hl">ShortTermMemory.build_context()</span>   ← last 5 turns, Haiku extraction
+  │
+  ▼
+<span class="hl">MemoryRetriever.load(user_id)</span>      ← nva_user_memory preferences
+  │
+  ▼
+<span class="gl">OrchestratorAgent.run()</span>
+  │
+  ├── _is_complex()?
+  │     YES → <span class="yl">ToTStrategy.run()</span>   ← 3 branches, score, select
+  │     NO  → direct dispatch
+  │
+  └── asyncio.gather(
+        <span class="gl">SearchAgent.run()</span>       → amadeus-mcp:8101 · car-rental-mcp:8102 · hotel-booking-mcp:8103
+        <span class="cn">PolicyAgent.run()</span>       → deterministic Python, no LLM
+        <span class="yl">DestinationAgent.run()</span>  → gpt-5.4
+      )
+           │
+           ▼  (if booking intent)
+      <span class="gl">BookingAgent.run()</span>      → write nva_bookings
+           │
+           ▼
+      <span class="hl">OrchestratorAgent.synthesize()</span>
+           │
+           ▼
+      SSE stream → client
+
+      [async, no-wait]
+      <span class="cn">JudgeAgent.run()</span>         → write nva_eval_scores</div>
+
+<h3>Multi-Provider LLM Routing</h3>
+<p>The <code>BaseAgent._chat()</code> method reads the <code>provider</code> field from <code>config/agents.json</code> at call time (the config is hot-reloadable) and routes to the appropriate SDK client:</p>
+
+<table>
+  <tr><th>Provider Value</th><th>SDK</th><th>Default Model</th><th>When to Use</th></tr>
+  <tr><td><code>azure-openai</code></td><td>openai.AsyncAzureOpenAI</td><td>gpt-4o (orchestrator), gpt-5.4 (others)</td><td>Default for all agents</td></tr>
+  <tr><td><code>anthropic</code></td><td>anthropic.AsyncAnthropic</td><td>claude-opus-4-7</td><td>JudgeAgent premium eval mode</td></tr>
+  <tr><td><code>openai</code></td><td>openai.AsyncOpenAI</td><td>gpt-4o</td><td>Direct OpenAI API (non-Azure)</td></tr>
+  <tr><td><code>ollama</code></td><td>openai (compat. base_url)</td><td>llama3</td><td>Local dev without cloud keys</td></tr>
+</table>
+
+<p>Model selection, temperature, and max_tokens are all configurable per agent via the Admin → Model Selection tab, which writes changes to <code>agents.json</code> and triggers a hot-reload on the next request — no service restart required.</p>
+
+<h3>agents.json Schema</h3>
+<pre>
+{
+  <span class="str">"orchestrator"</span>: {
+    <span class="str">"model"</span>: <span class="str">"azure/gpt-4o"</span>,    <span class="str">"provider"</span>: <span class="str">"azure-openai"</span>,
+    <span class="str">"temperature"</span>: 0.3,    <span class="str">"max_tokens"</span>: 2048,
+    <span class="str">"streaming"</span>: <span class="kw">true</span>
+  },
+  <span class="str">"search"</span>: {
+    <span class="str">"model"</span>: <span class="str">"azure/gpt-5.4"</span>,   <span class="str">"temperature"</span>: 0.1,  <span class="str">"max_tokens"</span>: 1024,
+    <span class="str">"mcp_servers"</span>: [<span class="str">"travel"</span>, <span class="str">"car_rental"</span>, <span class="str">"hotel_booking"</span>]
+  },
+  <span class="str">"policy"</span>:      { <span class="str">"temperature"</span>: 0.0, <span class="str">"max_tokens"</span>: 512 },
+  <span class="str">"destination"</span>: { <span class="str">"temperature"</span>: 0.5, <span class="str">"max_tokens"</span>: 1024 },
+  <span class="str">"booking"</span>:     { <span class="str">"temperature"</span>: 0.1, <span class="str">"max_tokens"</span>: 512 },
+  <span class="str">"judge"</span>: {
+    <span class="str">"temperature"</span>: 0.0,  <span class="str">"max_tokens"</span>: 1024,
+    <span class="str">"use_claude_opus"</span>: <span class="kw">false</span>   <span class="cm">// set true for Anthropic eval mode</span>
+  }
+}
+</pre>
+
+<h3>SSE Event Schema</h3>
+<p>The backend emits newline-delimited JSON events on the <code>/api/chat/stream/{conversation_id}</code> endpoint. The frontend dispatches on the <code>type</code> field:</p>
+<table>
+  <tr><th>Event Type</th><th>Payload Fields</th><th>UI Effect</th></tr>
+  <tr><td><code>agent_start</code></td><td>agent, timestamp</td><td>Show AgentBadge with spinner</td></tr>
+  <tr><td><code>token</code></td><td>agent, delta</td><td>Append delta to message bubble</td></tr>
+  <tr><td><code>agent_done</code></td><td>agent, latency_ms</td><td>Collapse spinner, show latency</td></tr>
+  <tr><td><code>mcp_tool_call</code></td><td>agent, tool, input</td><td>ToolCallCard in MCP Inspector</td></tr>
+  <tr><td><code>mcp_tool_result</code></td><td>agent, tool, output, latency_ms</td><td>Expand ToolCallCard with result</td></tr>
+  <tr><td><code>tot_start</code></td><td>agent, branches</td><td>ToT header in Inspector</td></tr>
+  <tr><td><code>tot_branch</code></td><td>branch_id, thought</td><td>Individual branch card</td></tr>
+  <tr><td><code>tot_evaluate</code></td><td>branch_id, score</td><td>Score badge on branch</td></tr>
+  <tr><td><code>tot_selected</code></td><td>branch_id</td><td>Highlight winning branch</td></tr>
+  <tr><td><code>error</code></td><td>message</td><td>Error toast notification</td></tr>
+  <tr><td><code>done</code></td><td>conversation_id</td><td>Stop spinner, enable input</td></tr>
+</table>
+
+<div class="page-footer">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>§4 Multi-Agent Framework (continued)</span>
+  <span>Page 7</span>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §5 TREE OF THOUGHT
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h2 style="margin-top:0;"><span class="section-num">§5</span> Tree of Thought Reasoning</h2>
+
+<h3>Motivation</h3>
+<p>Standard chain-of-thought prompting works well for straightforward queries ("book a flight from JFK to London"). For complex, multi-constraint queries — "optimise a three-leg executive itinerary for the lowest cost that still meets policy, avoids a visa issue in transit, and returns before the Friday board meeting" — a single reasoning chain frequently settles on a locally optimal solution that misses globally better alternatives.</p>
+
+<p>Tree of Thought (ToT) addresses this by generating multiple independent reasoning branches, evaluating each branch against the problem constraints, and selecting the highest-scoring branch as the final strategy before dispatching agents. This is implemented in <code>backend/application/agent/tot_strategy.py</code>.</p>
+
+<h3>Complexity Gate</h3>
+<p>The OrchestratorAgent runs a lightweight heuristic (<code>_is_complex()</code>) before deciding whether to invoke ToT. The gate activates if any of the following conditions are true:</p>
+<ul>
+  <li>The message contains three or more distinct travel components (flight + hotel + car + destination brief)</li>
+  <li>The message references a budget constraint alongside a policy tier constraint</li>
+  <li>The message involves multi-city or multi-leg routing</li>
+  <li>The message contains explicit optimisation language ("cheapest", "best", "lowest cost that still", "prioritise")</li>
+  <li>The Orchestrator's intent classification returns confidence &lt; 0.6 on the primary intent</li>
+</ul>
+
+<h3>Branch Generation</h3>
+<p>When ToT is activated, the OrchestratorAgent calls the LLM three times in parallel with a specially designed branch-generation prompt that instructs each call to take a different strategic angle:</p>
+<ul>
+  <li><strong>Branch 0 — Cost-first:</strong> minimise total travel spend within policy limits</li>
+  <li><strong>Branch 1 — Quality-first:</strong> maximise comfort and convenience within policy limits</li>
+  <li><strong>Branch 2 — Policy-first:</strong> strictly satisfy every policy rule, then optimise</li>
+</ul>
+<p>Each branch produces a structured JSON object containing: the proposed search parameters, the reasoning chain, predicted policy compliance, estimated cost tier, and a self-assessment confidence score (0–1).</p>
+
+<h3>Branch Evaluation</h3>
+<p>Each branch is scored by a second LLM pass (or by the deterministic PolicyAgent when the branch has enough parameter detail to evaluate). The scoring rubric has four dimensions:</p>
+<table>
+  <tr><th>Dimension</th><th>Weight</th><th>Description</th></tr>
+  <tr><td>Policy compliance</td><td>40%</td><td>Does the proposed itinerary satisfy all active policy rules?</td></tr>
+  <tr><td>Cost efficiency</td><td>25%</td><td>How close is the total cost to the minimum possible within policy?</td></tr>
+  <tr><td>Traveller preference alignment</td><td>20%</td><td>How well does the strategy match the user's stored preferences?</td></tr>
+  <tr><td>Completeness</td><td>15%</td><td>Does the strategy address all components of the request?</td></tr>
+</table>
+
+<h3>Branch Selection and Execution</h3>
+<p>The highest-scoring branch is selected. Its parameter set is passed to the agent dispatch pipeline (SearchAgent, PolicyAgent, DestinationAgent) as if it were the directly extracted parameters from a simple query. The Orchestrator logs the branch selection decision, including the scores of the rejected branches, in the conversation metadata for display in the MCP Inspector's ToT section.</p>
+
+<h3>SSE Visualisation</h3>
+<p>The ToT process is fully visible in the MCP Inspector panel. The panel renders a <code>ToTReasoningCard</code> component that shows:</p>
+<ul>
+  <li>A "Tree of Thought activated" header with the complexity reason</li>
+  <li>Three collapsible branch cards, each showing the branch strategy name, reasoning text, and evaluation score</li>
+  <li>A gold highlight on the selected branch</li>
+  <li>The total ToT latency (typically 1.5–3 seconds for three parallel branch generations)</li>
+</ul>
+
+<h3>Performance Characteristics</h3>
+<div class="callout">
+  <strong>Latency budget:</strong> ToT adds approximately 1.5–3 seconds to complex queries. The three branch-generation calls run in parallel (<code>asyncio.gather</code>), so the overhead is the slowest single branch call plus the evaluation pass — not three sequential calls. For simple queries the gate does not activate and there is zero ToT overhead.
+</div>
+
+<h3>Example: Complex Query</h3>
+<p><em>"I need the cheapest business-class flight from SFO to Tokyo with a 4-star hotel and a full-size car — but it has to fit within my executive travel policy and I need to be back by the 15th."</em></p>
+<p>This query triggers the ToT gate because it has five components (flight + hotel + car + policy constraint + return date constraint) and explicit cost optimisation language. The three branches explore: (0) cheapest available business class options with minimum hotel tier; (1) premium options at the tier upper limit; (2) the most policy-safe options closest to the per-diem. In testing, Branch 0 wins ~65% of the time when cost is explicitly mentioned; Branch 2 wins ~25% when the user profile indicates a compliance-sensitive department.</p>
+
+<div class="page-footer">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>§5 Tree of Thought Reasoning</span>
+  <span>Page 8</span>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §6 MCP ARCHITECTURE
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h2 style="margin-top:0;"><span class="section-num">§6</span> Model Context Protocol (MCP) Architecture</h2>
+
+<h3>What is MCP?</h3>
+<p>The Model Context Protocol (MCP) is a standardised JSON-RPC–like transport specification that allows LLM applications to call external tools in a provider-agnostic way. Instead of hardcoding HTTP calls to vendor APIs inside the agent code, the agent opens a connection to an MCP server, discovers its available tools via the <code>/tools</code> endpoint, and calls them by name with typed arguments. The MCP server is responsible for translating the tool call into the underlying data operation.</p>
+
+<p>navanVoyageAI uses <strong>FastMCP 3.4.2</strong>, the Python implementation of the MCP specification. Each sidecar is a FastMCP server that exposes its tools via the <code>streamable_http_app()</code> transport, which wraps the MCP protocol in a standard ASGI application served by uvicorn. The SearchAgent connects to sidecars using the FastMCP <code>Client</code> class over HTTP.</p>
+
+<h3>Sidecar Inventory</h3>
+<table>
+  <tr><th>Sidecar</th><th>Port</th><th>Tools</th><th>Dataset Size</th><th>Confirmation Format</th></tr>
+  <tr><td>Amadeus Travel MCP</td><td>8101</td><td>search_flights</td><td>36,288 flight records, 63 routes, 16 carriers</td><td>N/A (search only)</td></tr>
+  <tr><td>Car Rental MCP</td><td>8102</td><td>search_cars, book_car, cancel_car</td><td>12,600 records (6 agencies × 6 classes × 20 cities × 17.5 avg)</td><td>CR-YYYYMMDD-XXXX</td></tr>
+  <tr><td>Hotel Booking MCP</td><td>8103</td><td>search_hotels, book_hotel, cancel_hotel</td><td>39,600 records (12 brands × 4 tiers × 20 cities × ~41 avg)</td><td>HB-YYYYMMDD-XXXX</td></tr>
+</table>
+
+<h3>Amadeus Travel MCP — Flight Data</h3>
+<p>The Amadeus MCP sidecar serves synthetic flight data seeded to match realistic carrier, route, and pricing distributions. The dataset covers 63 routes across 20 IATA city pairs, 16 airline carriers, four cabin classes (Economy, Economy Plus, Business, First), and generates schedule/pricing variation using a deterministic seed so results are repeatable across demo sessions.</p>
+
+<h4>search_flights — Input Schema</h4>
+<table>
+  <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+  <tr><td>origin</td><td>string</td><td>Yes</td><td>IATA airport code (e.g. JFK)</td></tr>
+  <tr><td>destination</td><td>string</td><td>Yes</td><td>IATA airport code</td></tr>
+  <tr><td>depart_date</td><td>string</td><td>Yes</td><td>YYYY-MM-DD</td></tr>
+  <tr><td>cabin_class</td><td>string</td><td>No</td><td>Economy / Economy Plus / Business / First</td></tr>
+  <tr><td>adults</td><td>integer</td><td>No</td><td>Default 1</td></tr>
+  <tr><td>return_date</td><td>string</td><td>No</td><td>YYYY-MM-DD for round trip</td></tr>
+  <tr><td>max_price</td><td>number</td><td>No</td><td>Maximum price in USD</td></tr>
+</table>
+
+<h3>Car Rental MCP — Design</h3>
+<p>The Car Rental MCP sidecar covers 6 rental agencies × 6 vehicle classes × 20 IATA city codes, producing a total of 720 base rate combinations. Rates are generated deterministically using <code>hashlib.md5(f"{agency}:{city}")</code> to produce a stable base rate between $50 and $90/day, which is then multiplied by the vehicle class multiplier.</p>
+
+<h4>Vehicle Class Multipliers</h4>
+<table>
+  <tr><th>Class</th><th>Multiplier</th><th>Typical Daily Rate Range</th></tr>
+  <tr><td>Economy</td><td>1.00×</td><td>$50–$90/day</td></tr>
+  <tr><td>Compact</td><td>1.20×</td><td>$60–$108/day</td></tr>
+  <tr><td>Mid-size</td><td>1.45×</td><td>$73–$131/day</td></tr>
+  <tr><td>Full-size</td><td>1.70×</td><td>$85–$153/day</td></tr>
+  <tr><td>SUV</td><td>2.10×</td><td>$105–$189/day</td></tr>
+  <tr><td>Luxury</td><td>3.20×</td><td>$160–$288/day</td></tr>
+</table>
+
+<h4>search_cars — Response (6 results sorted by daily rate)</h4>
+<pre>
+{
+  <span class="str">"cars"</span>: [
+    {
+      <span class="str">"agency"</span>: <span class="str">"Hertz"</span>,          <span class="str">"vehicle_class"</span>: <span class="str">"Mid-size"</span>,
+      <span class="str">"pickup_city"</span>: <span class="str">"SFO"</span>,       <span class="str">"pickup_date"</span>: <span class="str">"2026-08-10"</span>,
+      <span class="str">"return_date"</span>: <span class="str">"2026-08-14"</span>, <span class="str">"daily_rate_usd"</span>: 89.00,
+      <span class="str">"total_usd"</span>: 356.00,         <span class="str">"location"</span>: <span class="str">"SFO Airport"</span>
+    }, ...
+  ]
+}
+</pre>
+
+<h3>Hotel Booking MCP — Design</h3>
+<p>The Hotel Booking MCP sidecar covers 12 hotel brands × 4 star tiers × 20 cities. The base nightly rate uses <code>hashlib.md5(f"{brand}:{city}")</code> to generate a stable value between $50 and $80/night, multiplied by the tier multiplier.</p>
+
+<h4>Tier Multipliers</h4>
+<table>
+  <tr><th>Tier</th><th>Multiplier</th><th>Typical Nightly Rate</th></tr>
+  <tr><td>2-star</td><td>1.00×</td><td>$50–$80/night</td></tr>
+  <tr><td>3-star</td><td>1.80×</td><td>$90–$144/night</td></tr>
+  <tr><td>4-star</td><td>3.20×</td><td>$160–$256/night</td></tr>
+  <tr><td>5-star</td><td>5.50×</td><td>$275–$440/night</td></tr>
+</table>
+
+<h3>Admin Panel — MCP Bindings Tab</h3>
+<p>The Admin console's MCP Bindings tab pings all three sidecars in parallel via the <code>GET /api/admin/mcp-bindings</code> backend endpoint. The backend uses <code>httpx.AsyncClient</code> to hit each sidecar's <code>/health</code> endpoint, measures round-trip latency with <code>time.monotonic()</code>, and returns an aggregated status object. The frontend renders each server as a card with a green/red status dot, the service URL, live latency in milliseconds, and an expandable tool schema section. Clicking a tool name expands its <code>inputSchema</code> as a formatted JSON block, giving administrators immediate visibility into tool contracts without leaving the admin console.</p>
+
+<div class="page-footer">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>§6 MCP Architecture</span>
+  <span>Page 9</span>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §7 MEMORY ARCHITECTURE
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h2 style="margin-top:0;"><span class="section-num">§7</span> Memory Architecture</h2>
+
+<h3>Overview</h3>
+<p>navanVoyageAI implements a two-tier memory architecture that allows the system to maintain conversational coherence within a session (short-term) while accumulating personalised preferences across sessions (long-term). Both tiers feed into the Orchestrator's system prompt at the start of each turn, ensuring that every agent response is informed by what the system knows about the user.</p>
+
+<div class="two-col">
+<div class="callout-navy">
+  <strong>Short-Term Memory (STM)</strong><br>
+  Sliding window of the last 5 conversation turns. Summarised by Claude Haiku (fast, cheap) into a compact context block. Lost when the conversation session ends. Lives in MongoDB <code>nva_conversations</code> for retrieval but is summarised fresh each turn.
+</div>
+<div class="callout">
+  <strong>Long-Term Memory (LTM)</strong><br>
+  Persistent user preference store in <code>nva_user_memory</code>. Updated after each session with extracted preferences (airline, seat class, dietary requirements, frequent flyer numbers). Loaded at the start of every new session.
+</div>
+</div>
+
+<h3>Short-Term Memory — ShortTermMemory</h3>
+<p>The <code>ShortTermMemory</code> class (<code>backend/application/agent/memory.py</code>) implements a sliding context window with the following parameters:</p>
+<ul>
+  <li><strong>Window size:</strong> 5 turns (10 messages — 5 user + 5 assistant)</li>
+  <li><strong>Max characters:</strong> 2,000 characters after summarisation</li>
+  <li><strong>Summariser model:</strong> Claude Haiku (claude-haiku-4-5) — chosen for speed and low cost</li>
+  <li><strong>Entity extraction:</strong> Haiku extracts a <code>session_context</code> dict containing named entities (airports, dates, hotels, car classes) that persist across the window for parameter resolution in subsequent turns</li>
+</ul>
+
+<pre>
+<span class="cm"># How STM context appears in the Orchestrator prompt:</span>
+<span class="str">=== SHORT-TERM MEMORY ===
+Turn -5: User asked about JFK→LHR flights on Aug 10. Searched Business class.
+Turn -4: Policy check: $3,200 price — within Executive limit of $4,000.
+Turn -3: User selected UA 1 flight. Booking wizard opened.
+Turn -2: User cancelled booking wizard (changed mind on dates).
+Turn -1: User asked to search for Aug 15 instead.
+
+Session entities: {origin: JFK, destination: LHR, cabin_class: Business}</span>
+</pre>
+
+<h3>Long-Term Memory — MemoryRetriever &amp; MemoryUpdater</h3>
+<p>Long-term memory persists user preferences to the <code>nva_user_memory</code> MongoDB collection. Each document is keyed by <code>user_id</code> and contains a structured preferences object:</p>
+
+<table>
+  <tr><th>Field</th><th>Type</th><th>Example</th><th>Source</th></tr>
+  <tr><td>preferred_airline</td><td>string</td><td>"United Airlines"</td><td>Booking pattern</td></tr>
+  <tr><td>preferred_seat</td><td>string</td><td>"Aisle, exit row"</td><td>BookingWizard form</td></tr>
+  <tr><td>preferred_meal</td><td>string</td><td>"Vegetarian"</td><td>BookingWizard form</td></tr>
+  <tr><td>preferred_hotel_tier</td><td>string</td><td>"4-star"</td><td>Booking pattern</td></tr>
+  <tr><td>preferred_car_class</td><td>string</td><td>"Mid-size"</td><td>Booking pattern</td></tr>
+  <tr><td>frequent_flyer</td><td>dict</td><td>{"UA": "1234567", "AA": "987654"}</td><td>Employee record + input</td></tr>
+  <tr><td>home_airport</td><td>string</td><td>"SFO"</td><td>Employee office_location</td></tr>
+  <tr><td>travel_tier</td><td>string</td><td>"Executive"</td><td>Employee record</td></tr>
+  <tr><td>last_updated</td><td>datetime</td><td>2026-06-15T14:23:00Z</td><td>Auto</td></tr>
+</table>
+
+<p>The <code>MemoryUpdater</code> runs as an async background task after each session ends (triggered by the last message's <code>done</code> SSE event being acknowledged). It calls the LLM with the full session transcript and a structured extraction prompt to identify any new or updated preferences, then writes them to MongoDB with <code>upsert=True</code>.</p>
+
+<h3>Memory in the Orchestrator Prompt</h3>
+<p>At the start of each turn, the Orchestrator prompt is assembled in the following order:</p>
+<ol>
+  <li>System prompt (from <code>agents.json</code>, editable in Admin → Agent Prompts)</li>
+  <li><code>=== USER LONG-TERM MEMORY ===</code> block (from MemoryRetriever)</li>
+  <li><code>=== SHORT-TERM MEMORY ===</code> block (from ShortTermMemory)</li>
+  <li><code>=== SESSION ENTITIES ===</code> block (Haiku-extracted entities)</li>
+  <li>The current user message</li>
+</ol>
+<p>This layered prompt structure ensures that the Orchestrator never forgets the user's name, preferred airline, or travel tier, even on the first message of a new session after months of inactivity.</p>
+
+<h3>Memory Impact on Demo Scenarios</h3>
+<div class="callout">
+  <strong>Demo value:</strong> After a traveller completes one booking via the wizard (selecting seat class, meal preference, and providing a frequent flyer number), those preferences are persisted to long-term memory. On their next login, the first search response automatically pre-fills cabin class with their preferred seat type and shows their frequent flyer airline options prominently — demonstrating that the system "knows" the traveller without them repeating themselves.
+</div>
+
+<div class="page-footer">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>§7 Memory Architecture</span>
+  <span>Page 10</span>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §8 CORPORATE POLICY ENGINE
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h2 style="margin-top:0;"><span class="section-num">§8</span> Corporate Policy Engine</h2>
+
+<h3>Design: Deterministic, LLM-Free</h3>
+<p>The PolicyAgent is deliberately implemented without an LLM call. Corporate travel policy is a binary domain: a $3,200 business class ticket either exceeds the $3,000 policy cap or it does not. Introducing LLM inference into this decision creates the risk of hallucinated thresholds, inconsistent verdicts, and unauditable compliance claims. By using a deterministic Python rule engine, navanVoyageAI guarantees that the same search result produces the same policy verdict every time — a property essential for any compliance-adjacent application.</p>
+
+<h3>Policy Storage</h3>
+<p>Policies are stored in the <code>nva_policies</code> MongoDB collection and loaded at agent startup. The Admin → Policy tab provides a CRUD interface for viewing and editing policy rules; changes take effect on the next request without restarting the backend. The six seeded policies are:</p>
+
+<table>
+  <tr><th>Policy Name</th><th>Applies To</th><th>Flight Cap</th><th>Cabin Class</th><th>Hotel/Night</th><th>Hotel Tier</th><th>Car/Day</th><th>Advance Booking</th></tr>
+  <tr><td>Standard Domestic</td><td>All employees (domestic US)</td><td>$800</td><td>Economy</td><td>$150</td><td>3-star max</td><td>$60</td><td>14 days min</td></tr>
+  <tr><td>International Travel</td><td>All employees (international)</td><td>$2,200</td><td>Economy Plus</td><td>$250</td><td>4-star max</td><td>$80</td><td>21 days min</td></tr>
+  <tr><td>Executive</td><td>Director+ employees</td><td>$4,000</td><td>Business</td><td>$400</td><td>5-star max</td><td>$120</td><td>7 days min</td></tr>
+  <tr><td>Company Executive</td><td>VP+ employees</td><td>$8,000</td><td>First class</td><td>$600</td><td>5-star max</td><td>$200</td><td>No minimum</td></tr>
+  <tr><td>Sales Executive</td><td>Sales VP+ field travel</td><td>$3,500</td><td>Business</td><td>$350</td><td>4-star max</td><td>$100</td><td>5 days min</td></tr>
+  <tr><td>Conference Traveller</td><td>Any employee at approved conference</td><td>$1,800</td><td>Economy Plus</td><td>$300</td><td>4-star max</td><td>$75</td><td>10 days min</td></tr>
+</table>
+
+<h3>Policy Rule Evaluation Logic</h3>
+<p>The PolicyAgent receives the full set of SearchAgent results (flights, hotels, cars) and the employee's travel tier from their profile. It evaluates each result against the applicable policy and produces a <code>PolicyVerdict</code>:</p>
+
+<pre>
+<span class="kw">class</span> PolicyVerdict:
+    compliant: bool
+    violations: list[str]      <span class="cm"># e.g. ["Flight $3,200 exceeds $3,000 Business cap"]</span>
+    suggestions: list[str]     <span class="cm"># e.g. ["Consider Economy Plus at $1,850 (within policy)"]</span>
+    applicable_policy: str     <span class="cm"># e.g. "Executive"</span>
+    checked_items: list[dict]  <span class="cm"># per-item compliance flags</span>
+</pre>
+
+<h4>Rules evaluated per flight result:</h4>
+<ul>
+  <li>Price in USD ≤ policy <code>max_flight_price</code></li>
+  <li>Cabin class ≤ policy <code>max_cabin_class</code> (Economy &lt; Economy Plus &lt; Business &lt; First)</li>
+  <li>Days until departure ≥ policy <code>min_advance_days</code></li>
+</ul>
+
+<h4>Rules evaluated per hotel result:</h4>
+<ul>
+  <li>Nightly rate in USD ≤ policy <code>max_hotel_nightly</code></li>
+  <li>Star tier ≤ policy <code>max_hotel_tier</code></li>
+</ul>
+
+<h4>Rules evaluated per car result:</h4>
+<ul>
+  <li>Daily rate in USD ≤ policy <code>max_car_daily</code></li>
+  <li>Vehicle class ≤ policy <code>max_car_class</code> (Economy &lt; Compact &lt; Mid-size &lt; Full-size &lt; SUV &lt; Luxury)</li>
+</ul>
+
+<h3>Policy UI Integration</h3>
+<p>Policy verdicts are surfaced in the UI at two levels:</p>
+<ul>
+  <li><strong>Search result cards:</strong> each FlightCard, HotelCard, and CarCard displays a green "Policy OK" badge or an amber "Policy Warning: [violation]" badge below the price.</li>
+  <li><strong>Booking wizard (Step 3 — Review):</strong> a policy checkbox must be acknowledged before the Confirm Booking button activates. If the selected itinerary has any policy warnings, they are listed explicitly in the review step.</li>
+</ul>
+
+<h3>Policy Admin CRUD</h3>
+<p>The Admin → Policy tab renders a full CRUD interface for the six policies. Each policy can be viewed as a table row, clicked to open an edit modal with field-level inputs for every limit and class cap, and saved back to MongoDB. Changes are validated client-side (numeric ranges, enum class values) before the API call. This is intended to simulate the HR/finance admin workflow where policies are periodically updated to reflect new cost guidelines or organisational changes.</p>
+
+<h3>Per-Diem Note</h3>
+<p>The policy engine records a <code>per_diem_usd</code> field on each policy (Standard: $75/day, International: $95/day, Executive: $150/day, Company Exec: $250/day) but per-diem is not enforced against search results — it is provided to the DestinationAgent as context for its cost briefing ("Your per diem of $150/day covers most restaurant meals in London; fine dining will require expense approval").</p>
+
+<div class="page-footer">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>§8 Corporate Policy Engine</span>
+  <span>Page 11</span>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §9 CHAT INTERFACE & SEARCH
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h2 style="margin-top:0;"><span class="section-num">§9</span> Chat Interface &amp; Search Pipeline</h2>
+
+<h3>Primary Frontend — Tailwind CSS (port 5210)</h3>
+<p>The primary navanVoyageAI frontend is built with Vite 5, React 18, and Tailwind CSS 3, using a custom navy/gold design token set. The layout is a three-column composition: a left sidebar for conversation history, a main chat column, and a right MCP Inspector panel that is toggled by a toolbar button. The color palette and typography are intentionally corporate and conservative — IBM Plex Sans, no rounded-xl, no gradients, subtle box shadows — to distinguish the platform from consumer AI chatbots.</p>
+
+<h3>Three-Column Layout</h3>
+<table>
+  <tr><th>Column</th><th>Width</th><th>Content</th></tr>
+  <tr><td>Left sidebar</td><td>260px fixed</td><td>Conversation list with timestamps; New Chat button; Admin gear icon</td></tr>
+  <tr><td>Main chat</td><td>flex-1</td><td>MessageBubble stream; AgentBadge row; search result cards; BookingWizard trigger</td></tr>
+  <tr><td>MCP Inspector</td><td>340px, toggleable</td><td>ToolCallCards; ToTReasoningCard; TurnSummaryBadge; per-call latency</td></tr>
+</table>
+
+<h3>MessageBubble &amp; AgentBadge Components</h3>
+<p>Each assistant turn renders a <code>MessageBubble</code> containing the streamed text response, followed by a row of <code>AgentBadge</code> components — one per agent that contributed to the turn. Each badge shows the agent name, a spinner while the agent is running, and the latency in milliseconds after it completes. The badges are colour-coded by agent type: teal for Search, amber for Policy, blue for Destination, navy for Booking, purple for Orchestrator.</p>
+
+<h3>Structured Search Result Cards</h3>
+<p>Search results are not embedded as plain text in the chat bubble. Instead, the SearchAgent's metadata is parsed by the frontend and rendered as interactive cards:</p>
+
+<div class="two-col">
+<div>
+  <h4>FlightCard</h4>
+  <ul>
+    <li>Carrier logo + flight number</li>
+    <li>Origin → Destination with arrow</li>
+    <li>Duration + stop count</li>
+    <li>Departure/arrival times</li>
+    <li>Price in USD (large, gold)</li>
+    <li>Cabin class badge</li>
+    <li>Policy badge (green/amber)</li>
+    <li><strong>Select →</strong> button → opens BookingWizard</li>
+  </ul>
+</div>
+<div>
+  <h4>HotelCard &amp; CarCard</h4>
+  <ul>
+    <li>Brand name + star tier (hotels) or vehicle class (cars)</li>
+    <li>City + location string</li>
+    <li>Rate per night / per day</li>
+    <li>Total cost for stay duration</li>
+    <li>Check-in/check-out or pickup/return dates</li>
+    <li>Policy badge</li>
+    <li>Book button (triggers booking agent)</li>
+  </ul>
+</div>
+</div>
+
+<h3>Chat Input</h3>
+<p>The <code>ChatInput</code> component is a textarea that auto-grows up to four lines, with Shift+Enter for newlines and Enter to submit. While a response is streaming, the textarea is disabled and shows a pulsing border. The input includes a voice-to-text button (browser-native <code>SpeechRecognition</code> API) for accessibility and demo purposes. Below the textarea, a row of quick-action chips provides one-click access to the five primary demo scenarios.</p>
+
+<h3>MCP Inspector Panel</h3>
+<p>The MCP Inspector panel is the primary technical transparency surface. For each conversation turn it shows:</p>
+<ul>
+  <li><strong>TurnSummaryBadge</strong> — agents activated, total turn latency, token count</li>
+  <li><strong>ToolCallCard per MCP call</strong> — tool name (e.g. <code>search_flights</code>), input parameters as formatted JSON, output summary, latency in ms, sidecar label (Amadeus / Car Rental / Hotel Booking)</li>
+  <li><strong>ToTReasoningCard</strong> — visible only when Tree of Thought activated; shows three branch cards with scores and the selected winner</li>
+  <li><strong>PolicyVerdictCard</strong> — the PolicyAgent's verdict with any violations listed</li>
+</ul>
+
+<h3>Parameter Extraction Accuracy</h3>
+<p>The SearchAgent's LLM-based parameter extraction prompt handles a wide range of natural language inputs:</p>
+<table>
+  <tr><th>Input Phrase</th><th>Extracted Field</th><th>Value</th></tr>
+  <tr><td>"next Tuesday"</td><td>depart_date</td><td>Today + days-to-next-Tuesday</td></tr>
+  <tr><td>"JFK to London"</td><td>origin/destination</td><td>JFK / LHR</td></tr>
+  <tr><td>"Paris not the airport"</td><td>destination</td><td>CDG (LLM resolves CDG as primary Paris airport)</td></tr>
+  <tr><td>"business class"</td><td>cabin_class</td><td>Business</td></tr>
+  <tr><td>"mid-size rental car"</td><td>vehicle_class / search_cars</td><td>Mid-size / true</td></tr>
+  <tr><td>"hotel in Dubai Aug 10–14"</td><td>city_code / check_in / check_out / search_hotels</td><td>DXB / 2026-08-10 / 2026-08-14 / true</td></tr>
+  <tr><td>"I need a 4-star hotel"</td><td>room_type (proxied as tier filter)</td><td>4-star</td></tr>
+</table>
+
+<h3>Streaming Token Display</h3>
+<p>The OrchestratorAgent is the only agent that uses a streaming LLM call. Token deltas are emitted as <code>{"type": "token", "delta": "the next few words"}</code> SSE events and appended directly to the active <code>MessageBubble</code> using React's <code>useRef</code> to avoid re-rendering the full message list on every token. The typing animation is a 2-pixel blinking cursor appended to the current token position, removed when the <code>done</code> event arrives.</p>
+
+<div class="page-footer">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>§9 Chat Interface &amp; Search Pipeline</span>
+  <span>Page 12</span>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §10 BOOKING SYSTEM
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h2 style="margin-top:0;"><span class="section-num">§10</span> Booking System</h2>
+
+<h3>BookingWizard — 4-Step Modal</h3>
+<p>Clicking <strong>Select →</strong> on any FlightCard opens the BookingWizard — a centred modal dialog with a four-step progressive form. The wizard persists state across steps using a <code>useBookingWizard</code> hook that holds the complete booking draft. The modal has a 48px header with the flight summary (carrier, route, price), a step indicator bar, and a scrollable body.</p>
+
+<h4>Step 1 — Passenger Details</h4>
+<p>Collects: full name, date of birth (date picker), passport number, passport expiry, email address, phone number, and emergency contact. Fields are pre-populated from the authenticated user's employee record where available (name, email). Client-side validation runs on blur; the Next button is disabled until all required fields pass.</p>
+
+<h4>Step 2 — Seat &amp; Meal Preference</h4>
+<p>Presents a seat preference selector (Window / Middle / Aisle, with Exit Row and Extra Legroom checkboxes) and a meal preference dropdown (Standard, Vegetarian, Vegan, Halal, Kosher, Gluten-Free, Low-Sodium, Child Meal). If the user has a saved seat/meal preference in long-term memory, the defaults are pre-selected. A frequent flyer number input appears for the selected carrier.</p>
+
+<h4>Step 3 — Review &amp; Policy Acknowledgement</h4>
+<p>Displays a full booking summary: passenger details, flight itinerary, seat preference, total price, applicable corporate policy. If the itinerary has policy warnings (e.g., price near the cap, cabin class upgrade from Economy allowed under special approval), they are shown as amber alert boxes. A policy acknowledgement checkbox ("I confirm this booking complies with or has been pre-approved under the [Policy Name] travel policy") must be checked before the Confirm Booking button activates.</p>
+
+<h4>Step 4 — Confirmation</h4>
+<p>On successful submission, the BookingAgent generates a <code>NVA-YYYY-NNNNN</code> reference number (year + zero-padded sequential integer from <code>nva_bookings</code> collection) and writes the booking document to MongoDB. The success screen displays the reference number prominently, the complete itinerary summary, and a <strong>Download Itinerary</strong> button that generates a formatted HTML itinerary page and triggers the browser's print-to-PDF dialog.</p>
+
+<h3>Booking Reference Format</h3>
+<pre>
+<span class="cn">NVA-2026-00042</span>
+  │    │      └── Sequential booking number (zero-padded, 5 digits)
+  │    └───────── Year (4 digits)
+  └────────────── navanVoyageAI prefix
+</pre>
+
+<h3>nva_bookings Document Schema</h3>
+<table>
+  <tr><th>Field</th><th>Type</th><th>Example</th></tr>
+  <tr><td>_id</td><td>ObjectId</td><td>auto</td></tr>
+  <tr><td>reference</td><td>string</td><td>"NVA-2026-00042"</td></tr>
+  <tr><td>user_id</td><td>string</td><td>"traveller"</td></tr>
+  <tr><td>flight</td><td>dict</td><td>carrier, flight_number, origin, destination, etc.</td></tr>
+  <tr><td>passenger</td><td>dict</td><td>name, dob, passport, email, phone, emergency_contact</td></tr>
+  <tr><td>preferences</td><td>dict</td><td>seat, meal, frequent_flyer</td></tr>
+  <tr><td>policy_name</td><td>string</td><td>"Executive"</td></tr>
+  <tr><td>policy_compliant</td><td>bool</td><td>true</td></tr>
+  <tr><td>policy_acknowledged</td><td>bool</td><td>true</td></tr>
+  <tr><td>total_usd</td><td>number</td><td>3200.00</td></tr>
+  <tr><td>status</td><td>string</td><td>"confirmed"</td></tr>
+  <tr><td>created_at</td><td>datetime</td><td>2026-06-15T14:23:00Z</td></tr>
+  <tr><td>conversation_id</td><td>string</td><td>links to nva_conversations</td></tr>
+</table>
+
+<h3>Cancellation Flow</h3>
+<p>A booking can be cancelled by referencing its NVA number in chat ("cancel my booking NVA-2026-00042") or via a Cancel button in the conversation history where the booking was made. The BookingAgent looks up the booking by reference, sets <code>status: "cancelled"</code>, and returns a cancellation confirmation message. The MCP sidecars' own <code>cancel_car</code> and <code>cancel_hotel</code> tools are available for the respective resource types when those sidecars handle the booking.</p>
+
+<h3>Hotel &amp; Car Booking via MCP</h3>
+<p>Unlike flights (where the Amadeus MCP is read-only for demo purposes), the Car Rental and Hotel Booking MCP sidecars include full <code>book_*</code> and <code>cancel_*</code> tools. The BookingAgent calls these tools when the user triggers a hotel or car booking from the respective search result cards:</p>
+<ul>
+  <li><code>book_car</code> returns a <code>CR-YYYYMMDD-XXXX</code> confirmation number stored in the booking document alongside the NVA reference</li>
+  <li><code>book_hotel</code> returns a <code>HB-YYYYMMDD-XXXX</code> confirmation number similarly</li>
+</ul>
+<p>This means a complete trip bundle (flight + hotel + car) generates three distinct confirmation numbers: one NVA reference (the navanVoyageAI master booking ID) plus one CR and one HB reference from the respective sidecars.</p>
+
+<div class="page-footer">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>§10 Booking System</span>
+  <span>Page 13</span>
+</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §11 ADMIN CONSOLE
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h2 style="margin-top:0;"><span class="section-num">§11</span> Admin Console (12 Tabs)</h2>
+
+<h3>Overview</h3>
+<p>The Admin Console is a 75vw × 75vh centred modal overlay accessible via the ⚙ gear icon in the top-right of the application. It requires admin credentials (admin / admin123 in the demo seed) and is protected by a JWT role guard on both the frontend route and the backend API endpoints. The console provides complete operational visibility into the platform — model configuration, prompt editing, MCP health, travel policies, employee records, real-time notifications, audit logs, billing, AI evaluation metrics, observability traces, chat history, and mock data browsing — all without leaving the application.</p>
+
+<h3>Tab Inventory</h3>
+<table>
+  <tr><th>#</th><th>Tab</th><th>Key Features</th><th>Data Source</th></tr>
+  <tr><td>1</td><td><strong>Model Selection</strong></td><td>Per-agent model, provider, temperature, max_tokens sliders; hot-reload via agents.json; Claude Opus toggle for JudgeAgent</td><td>config/agents.json (read/write)</td></tr>
+  <tr><td>2</td><td><strong>Agent Prompts</strong></td><td>Edit any agent's system prompt in a monospace textarea; unsaved-change indicator (● dot on tab); save → next turn uses new prompt</td><td>config/agents.json prompts section</td></tr>
+  <tr><td>3</td><td><strong>MCP Bindings</strong></td><td>Live status dots + latency ms for all 3 MCP sidecars; expandable tool schemas with inputSchema JSON; Refresh button</td><td>GET /api/admin/mcp-bindings (live pings)</td></tr>
+  <tr><td>4</td><td><strong>Policy</strong></td><td>View/edit all 6 corporate travel policies; CRUD modal with field-level validation; change takes effect immediately</td><td>nva_policies collection</td></tr>
+  <tr><td>5</td><td><strong>Employee Data</strong></td><td>Searchable table of 100 employee records; Upload CSV button; 17 fields per employee</td><td>nva_employees collection</td></tr>
+  <tr><td>6</td><td><strong>Notifications</strong></td><td>Real-time alert feed; notification categories (policy breach, booking, system); mark-read; clear all</td><td>WebSocket or SSE sub-channel</td></tr>
+  <tr><td>7</td><td><strong>Audit Log</strong></td><td>Searchable, filterable agent action log; auto-refresh every 10 seconds; CSV export</td><td>nva_audit_log collection</td></tr>
+  <tr><td>8</td><td><strong>Billing</strong></td><td>Token usage + cost by model/day; pure CSS bar chart; auto-refresh every 60 seconds; CSV export</td><td>nva_billing collection</td></tr>
+  <tr><td>9</td><td><strong>Eval Metrics</strong></td><td>JudgeAgent 5-criteria KPI cards; pass/fail rate; per-turn score history table; auto-refresh every 15 seconds; JSON export</td><td>nva_eval_scores collection</td></tr>
+  <tr><td>10</td><td><strong>Observability</strong></td><td>Per-conversation agent latency Gantt trace; select conversation from dropdown; agent timeline bars with ms labels</td><td>nva_conversations metadata</td></tr>
+  <tr><td>11</td><td><strong>Chat History</strong></td><td>Searchable conversation list; starred messages; reaction badges; inline thread expansion; eval score badges per turn; JSON/CSV export</td><td>nva_conversations collection</td></tr>
+  <tr><td>12</td><td><strong>Mock Data</strong></td><td>Browse the 88k+ flight, hotel, and car records used by MCP sidecars; filterable tables with pagination</td><td>Amadeus/Car/Hotel MCP mock data</td></tr>
+</table>
+
+<h3>Model Selection Tab — Detail</h3>
+<p>The Model Selection tab renders one configuration card per agent. Each card exposes:</p>
+<ul>
+  <li><strong>Provider dropdown:</strong> azure-openai / anthropic / openai / ollama</li>
+  <li><strong>Model input:</strong> free text (e.g. "azure/gpt-4o", "claude-opus-4-7", "llama3")</li>
+  <li><strong>Temperature slider:</strong> 0.0–1.0 in 0.05 steps</li>
+  <li><strong>Max tokens input:</strong> 128–4096</li>
+  <li><strong>Use Claude Opus toggle</strong> (JudgeAgent card only): switches JudgeAgent to claude-opus-4-7 via the Anthropic SDK</li>
+</ul>
+<p>Changes are saved to <code>agents.json</code> via <code>PUT /api/admin/model-config</code> and take effect on the next chat turn without requiring a service restart.</p>
+
+<h3>Audit Log Tab — Detail</h3>
+<p>The Audit Log tab shows every agent action in a time-ordered table with columns: timestamp, conversation_id, agent name, action type, input summary, output summary, and latency. It supports full-text search across all string fields and filter by agent name. The auto-refresh uses the <code>usePolling</code> hook with a 10-second interval. The CSV export button calls <code>GET /api/admin/audit-log?format=csv</code> and triggers a browser file download.</p>
+
+<h3>Billing Tab — Detail</h3>
+<p>The Billing tab aggregates token usage from <code>nva_billing</code> and renders a daily cost breakdown by model. The pure CSS bar chart uses <code>div</code> elements with <code>width: calc(value / max * 100%)</code> — no chart library dependency. Each bar is labelled with the model name, token count, and cost in USD (computed at current Azure OpenAI pricing). The auto-refresh interval is 60 seconds (billing data changes slowly).</p>
+
+<h3>Observability Tab — Gantt Trace</h3>
+<p>The Observability tab provides a per-conversation agent latency Gantt chart. The user selects a conversation from a dropdown, and the frontend calls <code>GET /api/admin/conversations/{id}/trace</code> to retrieve the timing data. The trace renders as a horizontal timeline where each agent appears as a bar starting at its <code>agent_start</code> timestamp and ending at its <code>agent_done</code> timestamp. Overlapping bars (agents running in parallel) are stacked in separate rows. This allows administrators to immediately visualise whether the parallel dispatch is working correctly and identify latency outliers.</p>
+
+<div class="page-footer">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>§11 Admin Console</span>
+  <span>Page 14</span>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §12 LLM OBSERVABILITY & EVALUATION
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h2 style="margin-top:0;"><span class="section-num">§12</span> LLM Observability &amp; Evaluation</h2>
+
+<h3>JudgeAgent — LLM-as-Judge Pattern</h3>
+<p>navanVoyageAI implements the LLM-as-Judge evaluation pattern for systematic response quality monitoring. After every chat turn completes, the JudgeAgent is invoked asynchronously (fire-and-forget) with the full exchange context — user message, assistant response, agent metadata, and any policy verdicts. The JudgeAgent calls an LLM with a structured scoring prompt and writes a 5-criteria evaluation document to <code>nva_eval_scores</code>.</p>
+
+<h3>The Five Evaluation Criteria</h3>
+<table>
+  <tr><th>Criterion</th><th>Score Range</th><th>Definition</th></tr>
+  <tr><td><strong>Accuracy</strong></td><td>1–5</td><td>Are the flight prices, hotel rates, visa requirements, and factual claims correct and internally consistent? Does the response contradict itself or the MCP tool output?</td></tr>
+  <tr><td><strong>Policy Compliance</strong></td><td>1–5</td><td>Did the assistant correctly identify policy violations? Did it surface the right policy tier for the user? Were compliant alternatives suggested when violations were found?</td></tr>
+  <tr><td><strong>Helpfulness</strong></td><td>1–5</td><td>Did the response fully address the user's request? Were all requested travel components covered (flight + hotel + car if requested)? Was actionable next-step guidance provided?</td></tr>
+  <tr><td><strong>Tone</strong></td><td>1–5</td><td>Is the response professional, clear, and appropriately concise for a corporate travel context? Does it avoid unnecessary verbosity or excessive hedging?</td></tr>
+  <tr><td><strong>Safety</strong></td><td>1–5</td><td>Does the response avoid disclosing sensitive information (other users' bookings, internal cost structures, employee personal data)? Does it handle edge cases safely?</td></tr>
+</table>
+
+<h3>Scoring Prompt Structure</h3>
+<p>The JudgeAgent's evaluation prompt is structured to produce machine-parseable output:</p>
+<pre>
+<span class="kw">System:</span> You are an expert evaluator of corporate travel AI assistants.
+Score the following exchange on five criteria. Return ONLY valid JSON:
+{
+  <span class="str">"accuracy"</span>:          { <span class="str">"score"</span>: 1-5, <span class="str">"rationale"</span>: <span class="str">"..."</span> },
+  <span class="str">"policy_compliance"</span>: { <span class="str">"score"</span>: 1-5, <span class="str">"rationale"</span>: <span class="str">"..."</span> },
+  <span class="str">"helpfulness"</span>:       { <span class="str">"score"</span>: 1-5, <span class="str">"rationale"</span>: <span class="str">"..."</span> },
+  <span class="str">"tone"</span>:              { <span class="str">"score"</span>: 1-5, <span class="str">"rationale"</span>: <span class="str">"..."</span> },
+  <span class="str">"safety"</span>:            { <span class="str">"score"</span>: 1-5, <span class="str">"rationale"</span>: <span class="str">"..."</span> },
+  <span class="str">"overall"</span>:           { <span class="str">"score"</span>: 1-5, <span class="str">"pass"</span>: true/false }
+}
+A pass requires overall >= 3.5 and no individual criterion below 2.
+</pre>
+
+<h3>Claude Opus for Premium Evaluation</h3>
+<p>The JudgeAgent supports switching from Azure OpenAI to Anthropic's Claude Opus model (<code>claude-opus-4-7</code>) for premium evaluation quality. This is controlled by the <code>use_claude_opus: true</code> flag in <code>agents.json</code>, togglable from the Admin → Model Selection tab. When enabled, the JudgeAgent routes its evaluation call through the Anthropic SDK instead of Azure OpenAI. Claude Opus's stronger instruction-following and nuanced reasoning produces more detailed and discriminating rationales — at higher cost and latency, which is acceptable for an async background task.</p>
+
+<h3>Eval Metrics Admin Tab</h3>
+<p>The Eval Metrics tab surfaces evaluation data in three views:</p>
+
+<h4>KPI Cards (top row)</h4>
+<p>Five cards — one per criterion — each showing the rolling average score (last 50 turns), a trend arrow (up/down vs. previous 50), and a pass/fail badge. A sixth card shows the overall pass rate as a percentage.</p>
+
+<h4>Score History Table</h4>
+<p>A paginated table of individual turn evaluations with columns: timestamp, conversation_id, overall score, pass/fail, and per-criterion scores. Clicking a row opens an inline expansion showing the full rationale text for each criterion.</p>
+
+<h4>Criteria Radar/Bar Chart</h4>
+<p>A pure CSS bar chart (matching the Billing tab's approach — no external chart library) showing the average score per criterion as a horizontal bar, allowing quick identification of weak areas (e.g., consistently low Safety scores might indicate the prompt needs tighter guardrails).</p>
+
+<h3>nva_eval_scores Document Schema</h3>
+<table>
+  <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+  <tr><td>conversation_id</td><td>string</td><td>Links to nva_conversations</td></tr>
+  <tr><td>turn_index</td><td>integer</td><td>Which turn in the conversation</td></tr>
+  <tr><td>accuracy</td><td>dict</td><td>{score: int, rationale: string}</td></tr>
+  <tr><td>policy_compliance</td><td>dict</td><td>{score: int, rationale: string}</td></tr>
+  <tr><td>helpfulness</td><td>dict</td><td>{score: int, rationale: string}</td></tr>
+  <tr><td>tone</td><td>dict</td><td>{score: int, rationale: string}</td></tr>
+  <tr><td>safety</td><td>dict</td><td>{score: int, rationale: string}</td></tr>
+  <tr><td>overall</td><td>dict</td><td>{score: float, pass: bool}</td></tr>
+  <tr><td>model_used</td><td>string</td><td>"azure-openai" or "anthropic/claude-opus-4-7"</td></tr>
+  <tr><td>evaluated_at</td><td>datetime</td><td>UTC timestamp of evaluation</td></tr>
+</table>
+
+<h3>Observability — Agent Latency Tracing</h3>
+<p>Every conversation turn writes timing data to the <code>metadata</code> field of the <code>nva_conversations</code> document. The metadata includes an <code>agent_traces</code> array where each entry records:</p>
+<ul>
+  <li><code>agent</code> — agent name</li>
+  <li><code>start_ms</code> — milliseconds from turn start when agent_start was emitted</li>
+  <li><code>end_ms</code> — milliseconds from turn start when agent_done was emitted</li>
+  <li><code>mcp_calls</code> — list of MCP tool call latencies within this agent's execution</li>
+</ul>
+<p>The Observability tab queries this data and renders it as a Gantt chart, allowing administrators to verify that parallel dispatch is working (SearchAgent, PolicyAgent, and DestinationAgent bars should overlap), identify which MCP sidecar is slowest, and spot individual turns where the Orchestrator's synthesis step added unexpected latency.</p>
+
+<div class="page-footer">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>§12 LLM Observability &amp; Evaluation</span>
+  <span>Page 15</span>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §13 DATA ARCHITECTURE
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h2 style="margin-top:0;"><span class="section-num">§13</span> Data Architecture &amp; Mock Datasets</h2>
+
+<h3>MongoDB — nva_db</h3>
+<p>navanVoyageAI uses MongoDB 7 as its primary datastore, accessed from the FastAPI backend via <strong>Motor</strong> (the async MongoDB driver for Python). The database name is <code>nva_db</code>, running on port 27117 (offset from the default 27017 to avoid conflicts with any local MongoDB instance). Seven collections serve the platform's operational and analytical needs.</p>
+
+<h3>Collection Inventory</h3>
+<table>
+  <tr><th>Collection</th><th>Documents (demo seed)</th><th>Primary Use</th><th>Key Indexes</th></tr>
+  <tr><td>nva_conversations</td><td>Grows with usage</td><td>Full conversation history, metadata, agent traces</td><td>{user_id, created_at}, {conversation_id}</td></tr>
+  <tr><td>nva_audit_log</td><td>Grows with usage</td><td>Agent action log, MCP call log, policy verdicts</td><td>{timestamp desc}, {agent}, {conversation_id}</td></tr>
+  <tr><td>nva_eval_scores</td><td>Grows with usage</td><td>JudgeAgent 5-criteria scores per turn</td><td>{conversation_id}, {evaluated_at desc}</td></tr>
+  <tr><td>nva_bookings</td><td>Grows with usage</td><td>Confirmed and cancelled travel bookings</td><td>{reference unique}, {user_id}, {status}</td></tr>
+  <tr><td>nva_policies</td><td>6 (seeded)</td><td>Corporate travel policy rules</td><td>{name unique}</td></tr>
+  <tr><td>nva_billing</td><td>Grows with usage</td><td>Token usage and cost per agent per day</td><td>{date, agent, model}</td></tr>
+  <tr><td>nva_user_memory</td><td>Grows with usage</td><td>Long-term user preference store</td><td>{user_id unique}</td></tr>
+</table>
+
+<h3>nva_conversations Document Structure</h3>
+<pre>
+{
+  <span class="str">"conversation_id"</span>: <span class="str">"uuid4"</span>,
+  <span class="str">"user_id"</span>: <span class="str">"traveller"</span>,
+  <span class="str">"created_at"</span>: <span class="str">"ISODate"</span>,
+  <span class="str">"updated_at"</span>: <span class="str">"ISODate"</span>,
+  <span class="str">"title"</span>: <span class="str">"JFK → LHR business class Aug 10"</span>,
+  <span class="str">"starred"</span>: false,
+  <span class="str">"messages"</span>: [
+    { <span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"..."</span>, <span class="str">"timestamp"</span>: <span class="str">"ISODate"</span> },
+    { <span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: <span class="str">"..."</span>,
+      <span class="str">"agent_traces"</span>: [...],  <span class="str">"mcp_events"</span>: [...],
+      <span class="str">"policy_verdict"</span>: {...},  <span class="str">"eval_score"</span>: {...} }
+  ],
+  <span class="str">"session_context"</span>: { <span class="str">"entities"</span>: { <span class="str">"origin"</span>: <span class="str">"JFK"</span>, ... } },
+  <span class="str">"reactions"</span>: { <span class="str">"thumbs_up"</span>: 2, <span class="str">"thumbs_down"</span>: 0 }
+}
+</pre>
+
+<h3>Mock Dataset — Flights (Amadeus MCP)</h3>
+<p>The Amadeus MCP sidecar generates its flight data at startup using a deterministic seed function. The dataset is not stored in MongoDB — it lives in memory in the sidecar process and is queried via <code>search_flights</code> tool calls.</p>
+<table>
+  <tr><th>Dimension</th><th>Value</th></tr>
+  <tr><td>Total flight records</td><td>36,288</td></tr>
+  <tr><td>Routes covered</td><td>63 (all pairs from the 20-city set, bidirectional)</td></tr>
+  <tr><td>Airlines</td><td>16 carriers (UA, AA, DL, BA, LH, AF, EK, SQ, CX, QF, NH, KE, TK, QR, IB, AC)</td></tr>
+  <tr><td>Cabin classes</td><td>4 (Economy, Economy Plus, Business, First)</td></tr>
+  <tr><td>Date range</td><td>±90 days from current date, regenerated at sidecar boot</td></tr>
+  <tr><td>Price variation</td><td>Seeded per route × carrier × class; ±15% random noise per date</td></tr>
+</table>
+
+<h3>Mock Dataset — Hotels (Hotel Booking MCP)</h3>
+<table>
+  <tr><th>Dimension</th><th>Value</th></tr>
+  <tr><td>Total hotel records</td><td>39,600</td></tr>
+  <tr><td>Hotel brands</td><td>12 (Marriott, Hilton, Hyatt, IHG, Accor, Four Seasons, Ritz-Carlton, Westin, Sheraton, Radisson, Novotel, Ibis)</td></tr>
+  <tr><td>Cities</td><td>20 IATA codes (SFO, JFK, LAX, ORD, DFW, MIA, SEA, BOS, ATL, DEN, LHR, CDG, NRT, DXB, SYD, SIN, HKG, AMS, FRA, ZRH)</td></tr>
+  <tr><td>Star tiers</td><td>4 (2-star, 3-star, 4-star, 5-star)</td></tr>
+  <tr><td>Rate determination</td><td>md5(brand:city) → base $50–$80/night × tier multiplier</td></tr>
+</table>
+
+<h3>Mock Dataset — Cars (Car Rental MCP)</h3>
+<table>
+  <tr><th>Dimension</th><th>Value</th></tr>
+  <tr><td>Total car records</td><td>12,600</td></tr>
+  <tr><td>Rental agencies</td><td>6 (Hertz, Avis, Enterprise, Budget, National, Europcar)</td></tr>
+  <tr><td>Vehicle classes</td><td>6 (Economy, Compact, Mid-size, Full-size, SUV, Luxury)</td></tr>
+  <tr><td>Cities</td><td>20 (same set as Hotels)</td></tr>
+  <tr><td>Rate determination</td><td>md5(agency:city) → base $50–$90/day × class multiplier</td></tr>
+</table>
+
+<h3>Employee Dataset</h3>
+<p>100 synthetic employee records are seeded into <code>nva_employees</code> at startup. Each record contains 17 fields:</p>
+
+<table>
+  <tr><th>Field</th><th>Example</th><th>Field</th><th>Example</th></tr>
+  <tr><td>employee_id</td><td>EMP-0042</td><td>travel_tier</td><td>Executive</td></tr>
+  <tr><td>first_name</td><td>Sarah</td><td>office_location</td><td>SFO</td></tr>
+  <tr><td>last_name</td><td>Chen</td><td>hire_date</td><td>2019-03-15</td></tr>
+  <tr><td>full_name</td><td>Sarah Chen</td><td>manager</td><td>EMP-0007</td></tr>
+  <tr><td>email</td><td>s.chen@company.com</td><td>cost_center</td><td>ENG-42</td></tr>
+  <tr><td>department</td><td>Engineering</td><td>preferred_airline</td><td>United Airlines</td></tr>
+  <tr><td>job_title</td><td>Senior Engineer</td><td>preferred_hotel</td><td>Marriott</td></tr>
+  <tr><td>frequent_flyer</td><td>{"UA": "1234567"}</td><td>active</td><td>true</td></tr>
+  <tr><td>notes</td><td>Aisle seat preferred, gluten-free</td><td></td><td></td></tr>
+</table>
+
+<div class="page-footer">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>§13 Data Architecture</span>
+  <span>Page 16</span>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §14 REST API REFERENCE
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h2 style="margin-top:0;"><span class="section-num">§14</span> REST API Reference</h2>
+
+<p>The FastAPI backend exposes 41 endpoints across two routers: the main chat/auth router and the admin router. All endpoints require a JWT Bearer token in the <code>Authorization</code> header; admin endpoints additionally require the <code>is_admin: true</code> claim. The interactive API documentation is available at <code>http://localhost:8100/docs</code> (Swagger UI) and <code>http://localhost:8100/redoc</code> (ReDoc).</p>
+
+<h3>Authentication Endpoints</h3>
+<table>
+  <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+  <tr><td>POST</td><td>/api/auth/login</td><td>Username + password → JWT access token (HS256, 24h expiry)</td></tr>
+  <tr><td>POST</td><td>/api/auth/refresh</td><td>Refresh token → new access token</td></tr>
+  <tr><td>GET</td><td>/api/auth/me</td><td>Return current user profile from JWT claims</td></tr>
+</table>
+
+<h3>Chat Endpoints</h3>
+<table>
+  <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+  <tr><td>POST</td><td>/api/chat/message</td><td>Send a message; opens SSE stream response</td></tr>
+  <tr><td>GET</td><td>/api/chat/conversations</td><td>List all conversations for current user</td></tr>
+  <tr><td>GET</td><td>/api/chat/conversations/{id}</td><td>Fetch a single conversation with all messages</td></tr>
+  <tr><td>DELETE</td><td>/api/chat/conversations/{id}</td><td>Delete a conversation</td></tr>
+  <tr><td>POST</td><td>/api/chat/conversations/{id}/star</td><td>Toggle starred status</td></tr>
+  <tr><td>POST</td><td>/api/chat/conversations/{id}/react</td><td>Add thumbs_up/thumbs_down reaction to a turn</td></tr>
+  <tr><td>POST</td><td>/api/chat/bookings</td><td>Confirm a booking (BookingWizard Step 3 submit)</td></tr>
+  <tr><td>GET</td><td>/api/chat/bookings</td><td>List all bookings for current user</td></tr>
+  <tr><td>GET</td><td>/api/chat/bookings/{reference}</td><td>Fetch booking by NVA reference number</td></tr>
+  <tr><td>POST</td><td>/api/chat/bookings/{reference}/cancel</td><td>Cancel a booking</td></tr>
+  <tr><td>GET</td><td>/api/chat/bookings/{reference}/itinerary</td><td>Download HTML itinerary for print-to-PDF</td></tr>
+  <tr><td>GET</td><td>/api/health</td><td>Health check → {"status": "ok", "version": "1.0"}</td></tr>
+</table>
+
+<h3>Admin Endpoints (require is_admin claim)</h3>
+<table>
+  <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+  <tr><td>GET</td><td>/api/admin/model-config</td><td>Fetch current agents.json config</td></tr>
+  <tr><td>PUT</td><td>/api/admin/model-config</td><td>Update agents.json config (hot-reload)</td></tr>
+  <tr><td>GET</td><td>/api/admin/mcp-bindings</td><td>Live health + latency + tools for all MCP sidecars</td></tr>
+  <tr><td>GET</td><td>/api/admin/policies</td><td>List all corporate travel policies</td></tr>
+  <tr><td>POST</td><td>/api/admin/policies</td><td>Create a new policy</td></tr>
+  <tr><td>PUT</td><td>/api/admin/policies/{name}</td><td>Update a policy</td></tr>
+  <tr><td>DELETE</td><td>/api/admin/policies/{name}</td><td>Delete a policy</td></tr>
+  <tr><td>GET</td><td>/api/admin/employees</td><td>List all employees (paginated, searchable)</td></tr>
+  <tr><td>POST</td><td>/api/admin/employees/upload</td><td>Bulk upload employees from CSV</td></tr>
+  <tr><td>GET</td><td>/api/admin/audit-log</td><td>Query audit log (filterable, ?format=csv)</td></tr>
+  <tr><td>GET</td><td>/api/admin/billing</td><td>Token usage + cost by model/day</td></tr>
+  <tr><td>GET</td><td>/api/admin/eval-scores</td><td>JudgeAgent scores (paginated, ?format=json)</td></tr>
+  <tr><td>GET</td><td>/api/admin/eval-scores/summary</td><td>Aggregate KPIs: avg per criterion, pass rate</td></tr>
+  <tr><td>GET</td><td>/api/admin/conversations</td><td>All conversations (admin view, all users)</td></tr>
+  <tr><td>GET</td><td>/api/admin/conversations/{id}/trace</td><td>Agent latency trace for Gantt chart</td></tr>
+  <tr><td>GET</td><td>/api/admin/mock-data/flights</td><td>Browse Amadeus flight records (paginated)</td></tr>
+  <tr><td>GET</td><td>/api/admin/mock-data/hotels</td><td>Browse hotel records (paginated)</td></tr>
+  <tr><td>GET</td><td>/api/admin/mock-data/cars</td><td>Browse car rental records (paginated)</td></tr>
+  <tr><td>GET</td><td>/api/admin/notifications</td><td>Fetch notification feed</td></tr>
+  <tr><td>POST</td><td>/api/admin/notifications/{id}/read</td><td>Mark notification as read</td></tr>
+  <tr><td>DELETE</td><td>/api/admin/notifications</td><td>Clear all notifications</td></tr>
+  <tr><td>GET</td><td>/api/admin/prompts</td><td>Fetch all agent system prompts</td></tr>
+  <tr><td>PUT</td><td>/api/admin/prompts/{agent}</td><td>Update a specific agent's system prompt</td></tr>
+</table>
+
+<h3>MCP Sidecar Endpoints</h3>
+<p>Each MCP sidecar exposes a consistent endpoint contract:</p>
+<table>
+  <tr><th>Method</th><th>Path</th><th>Sidecars</th><th>Description</th></tr>
+  <tr><td>GET</td><td>/health</td><td>All three</td><td>{"status": "ok", "service": "amadeus-mcp|car-rental-mcp|hotel-booking-mcp"}</td></tr>
+  <tr><td>GET</td><td>/tools</td><td>All three</td><td>MCP-style tool schema list with inputSchema per tool</td></tr>
+  <tr><td>POST</td><td>/mcp</td><td>All three</td><td>FastMCP streamable HTTP transport endpoint (used by FastMCP Client)</td></tr>
+  <tr><td>POST</td><td>/tools/search_flights</td><td>Amadeus only</td><td>Direct HTTP tool call (for testing without FastMCP client)</td></tr>
+  <tr><td>POST</td><td>/tools/search_cars</td><td>Car Rental only</td><td>Direct HTTP tool call</td></tr>
+  <tr><td>POST</td><td>/tools/book_car</td><td>Car Rental only</td><td>Book a car rental; returns CR-YYYYMMDD-XXXX</td></tr>
+  <tr><td>POST</td><td>/tools/cancel_car</td><td>Car Rental only</td><td>Cancel by confirmation number</td></tr>
+  <tr><td>POST</td><td>/tools/search_hotels</td><td>Hotel only</td><td>Direct HTTP tool call</td></tr>
+  <tr><td>POST</td><td>/tools/book_hotel</td><td>Hotel only</td><td>Book a hotel; returns HB-YYYYMMDD-XXXX</td></tr>
+  <tr><td>POST</td><td>/tools/cancel_hotel</td><td>Hotel only</td><td>Cancel by confirmation number</td></tr>
+</table>
+
+<div class="page-footer">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>§14 REST API Reference</span>
+  <span>Page 17</span>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §15 INFRASTRUCTURE & DEPLOYMENT
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h2 style="margin-top:0;"><span class="section-num">§15</span> Infrastructure &amp; Deployment</h2>
+
+<h3>Docker Compose — Seven Services</h3>
+<p>navanVoyageAI deploys with a single <code>docker compose up --build</code> command that starts all seven services on the private <code>nva-net</code> bridge network. The compose file is located at <code>infrastructure/docker/docker-compose.yml</code>.</p>
+
+<pre>
+<span class="cm"># infrastructure/docker/docker-compose.yml (abridged)</span>
+<span class="kw">services:</span>
+  <span class="kw">nginx:</span>
+    image: nginx:alpine
+    ports: [<span class="str">"3010:80"</span>]
+    volumes: [./nginx.conf:/etc/nginx/nginx.conf:ro]
+
+  <span class="kw">frontend:</span>
+    build: { context: ../.., dockerfile: Dockerfile.frontend }
+    ports: [<span class="str">"5210:5210"</span>]
+
+  <span class="kw">backend:</span>
+    build: { context: ../.., dockerfile: Dockerfile.backend }
+    ports: [<span class="str">"8100:8100"</span>]
+    environment:
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - MONGODB_HOST=mongodb
+      - CAR_RENTAL_MCP_URL=http://car-rental-mcp:8102
+      - HOTEL_BOOKING_MCP_URL=http://hotel-booking-mcp:8103
+      - AMADEUS_MCP_URL=http://amadeus-mcp:8101
+
+  <span class="kw">amadeus-mcp:</span>
+    build: { context: ../.., dockerfile: Dockerfile.amadeus-mcp }
+    ports: [<span class="str">"8101:8101"</span>]
+
+  <span class="kw">car-rental-mcp:</span>
+    build: { context: ../.., dockerfile: Dockerfile.car-rental-mcp }
+    ports: [<span class="str">"8102:8102"</span>]
+
+  <span class="kw">hotel-booking-mcp:</span>
+    build: { context: ../.., dockerfile: Dockerfile.hotel-booking-mcp }
+    ports: [<span class="str">"8103:8103"</span>]
+
+  <span class="kw">mongodb:</span>
+    image: mongo:7
+    ports: [<span class="str">"27117:27017"</span>]
+    volumes: [nva-mongo-data:/data/db]
+
+<span class="kw">networks:</span>
+  nva-net: { driver: bridge }
+</pre>
+
+<h3>Dockerfiles</h3>
+<p>All Python services use a consistent multi-stage build pattern based on <code>python:3.12-slim</code>:</p>
+
+<pre>
+<span class="kw">FROM</span> python:3.12-slim
+<span class="kw">WORKDIR</span> /app
+<span class="kw">COPY</span> requirements.txt .
+<span class="kw">RUN</span> pip install --no-cache-dir -r requirements.txt
+<span class="kw">COPY</span> . .
+<span class="kw">EXPOSE</span> 8102    <span class="cm"># or 8100, 8101, 8103</span>
+<span class="kw">CMD</span> [<span class="str">"python"</span>, <span class="str">"server.py"</span>]  <span class="cm"># or uvicorn api.main:app --port 8100</span>
+</pre>
+
+<p>The frontend uses a Node 20 builder stage + nginx:alpine runtime stage: Vite builds the static assets, nginx serves them on port 5210.</p>
+
+<h3>Environment Variables</h3>
+<table>
+  <tr><th>Variable</th><th>Service</th><th>Required</th><th>Description</th></tr>
+  <tr><td>AZURE_OPENAI_API_KEY</td><td>backend</td><td>Yes</td><td>Azure OpenAI API key</td></tr>
+  <tr><td>AZURE_OPENAI_ENDPOINT</td><td>backend</td><td>Yes</td><td>Azure OpenAI endpoint URL</td></tr>
+  <tr><td>ANTHROPIC_API_KEY</td><td>backend</td><td>Optional</td><td>Required only if use_claude_opus: true</td></tr>
+  <tr><td>OPENAI_API_KEY</td><td>backend</td><td>Optional</td><td>Required only if provider: "openai"</td></tr>
+  <tr><td>MONGODB_HOST</td><td>backend</td><td>Yes</td><td>MongoDB hostname (default: localhost)</td></tr>
+  <tr><td>MONGODB_USERNAME</td><td>backend</td><td>Optional</td><td>MongoDB auth username</td></tr>
+  <tr><td>MONGODB_PASSWORD</td><td>backend</td><td>Optional</td><td>MongoDB auth password</td></tr>
+  <tr><td>JWT_SECRET</td><td>backend</td><td>Yes</td><td>HS256 signing secret</td></tr>
+  <tr><td>AMADEUS_MCP_URL</td><td>backend</td><td>No</td><td>Default: http://localhost:8101</td></tr>
+  <tr><td>CAR_RENTAL_MCP_URL</td><td>backend</td><td>No</td><td>Default: http://localhost:8102</td></tr>
+  <tr><td>HOTEL_BOOKING_MCP_URL</td><td>backend</td><td>No</td><td>Default: http://localhost:8103</td></tr>
+</table>
+
+<h3>nginx Configuration</h3>
+<p>The nginx reverse proxy routes traffic based on path prefix. The <code>/api/</code> prefix is proxied to the backend with WebSocket and SSE upgrade support:</p>
+<pre>
+<span class="kw">location</span> /api/ {
+    proxy_pass http://backend:8100/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_buffering off;    <span class="cm"># critical for SSE streaming</span>
+    proxy_cache off;
+}
+</pre>
+
+<p>The <code>proxy_buffering off</code> directive is critical for SSE — without it, nginx buffers the response body and the client does not receive tokens until the buffer is full, breaking the streaming UX.</p>
+
+<h3>CI/CD Workflow</h3>
+<p>A GitHub Actions workflow (<code>.github/workflows/ci.yml</code>) runs on every push to the <code>main</code> branch and on all pull requests. The workflow:</p>
+<ol>
+  <li>Spins up a MongoDB service container</li>
+  <li>Installs Python 3.12 and <code>pip install -r requirements.txt</code></li>
+  <li>Runs <code>pytest tests/</code> — unit and integration tests for all agents and API routers</li>
+  <li>Installs Node 20 and runs <code>npx tsc --noEmit</code> for TypeScript type checking</li>
+  <li>Runs <code>docker compose build</code> to verify all Dockerfiles build cleanly</li>
+</ol>
+
+<h3>Development Without Docker</h3>
+<p>For local development, each service can be started independently:</p>
+<pre>
+<span class="cm"># Backend</span>
+cd backend && pip install -r requirements.txt
+uvicorn api.main:app --reload --port 8100
+
+<span class="cm"># MCP sidecars</span>
+python amadeus-mcp/server.py       <span class="cm"># port 8101</span>
+python car-rental-mcp/server.py    <span class="cm"># port 8102</span>
+python hotel-booking-mcp/server.py <span class="cm"># port 8103</span>
+
+<span class="cm"># Frontend (primary)</span>
+cd frontend && npm install && npm run dev   <span class="cm"># → http://localhost:5210</span>
+</pre>
+
+<div class="page-footer">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>§15 Infrastructure &amp; Deployment</span>
+  <span>Page 18</span>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §16 TECHNOLOGY STACK
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h2 style="margin-top:0;"><span class="section-num">§16</span> Technology Stack Summary</h2>
+
+<h3>Frontend Stack</h3>
+<table>
+  <tr><th>Component</th><th>Technology</th><th>Version</th><th>Role</th></tr>
+  <tr><td>Build tool</td><td>Vite</td><td>5.x</td><td>Fast HMR dev server + production bundler</td></tr>
+  <tr><td>Framework</td><td>React</td><td>18.x</td><td>Component model, hooks, Context API</td></tr>
+  <tr><td>Language</td><td>TypeScript</td><td>5.x</td><td>Static typing for all frontend code</td></tr>
+  <tr><td>Styling (primary)</td><td>Tailwind CSS</td><td>3.x</td><td>Custom navy/gold utility classes</td></tr>
+  <tr><td>Styling (variant 2)</td><td>Adobe React Spectrum S2</td><td>latest</td><td>Adobe design system — TableView, ToastQueue</td></tr>
+  <tr><td>Styling (variant 3)</td><td>Angular Material M3</td><td>Angular 18</td><td>Violet M3 theme — MatTable, MatSnackBar</td></tr>
+  <tr><td>Typography</td><td>IBM Plex Sans</td><td>Google Fonts</td><td>Primary typeface throughout all UIs</td></tr>
+  <tr><td>Streaming</td><td>EventSource (native)</td><td>browser API</td><td>SSE client for token streaming</td></tr>
+  <tr><td>HTTP client</td><td>fetch (native)</td><td>browser API</td><td>API calls (no axios dependency)</td></tr>
+  <tr><td>Icons</td><td>Heroicons</td><td>2.x</td><td>SVG icon set, MIT licensed</td></tr>
+</table>
+
+<h3>Backend Stack</h3>
+<table>
+  <tr><th>Component</th><th>Technology</th><th>Version</th><th>Role</th></tr>
+  <tr><td>Web framework</td><td>FastAPI</td><td>0.111+</td><td>ASGI framework, automatic OpenAPI docs</td></tr>
+  <tr><td>Language</td><td>Python</td><td>3.12</td><td>All backend, agent, and MCP sidecar code</td></tr>
+  <tr><td>ASGI server</td><td>uvicorn</td><td>0.29+</td><td>Production ASGI server with standard extras</td></tr>
+  <tr><td>Async MongoDB</td><td>Motor</td><td>3.x</td><td>Async MongoDB driver for Python</td></tr>
+  <tr><td>MongoDB ODM</td><td>none (raw Motor)</td><td>—</td><td>Direct dict-based document operations</td></tr>
+  <tr><td>Azure OpenAI SDK</td><td>openai</td><td>1.x</td><td>AsyncAzureOpenAI client for all LLM calls</td></tr>
+  <tr><td>Anthropic SDK</td><td>anthropic</td><td>0.28+</td><td>AsyncAnthropic client for JudgeAgent Opus mode</td></tr>
+  <tr><td>MCP client</td><td>fastmcp</td><td>3.4.2</td><td>FastMCP Client for tool calls</td></tr>
+  <tr><td>HTTP client</td><td>httpx</td><td>0.27+</td><td>Async HTTP client for health pings</td></tr>
+  <tr><td>Auth</td><td>python-jose</td><td>3.x</td><td>JWT encoding/decoding (HS256)</td></tr>
+  <tr><td>Password hashing</td><td>passlib[bcrypt]</td><td>1.7+</td><td>bcrypt password hashing</td></tr>
+  <tr><td>SSE streaming</td><td>sse-starlette</td><td>2.x</td><td>EventSourceResponse for token streaming</td></tr>
+  <tr><td>Validation</td><td>pydantic</td><td>2.x</td><td>Request/response models, settings management</td></tr>
+</table>
+
+<h3>MCP Sidecar Stack</h3>
+<table>
+  <tr><th>Component</th><th>Technology</th><th>Version</th><th>Notes</th></tr>
+  <tr><td>MCP framework</td><td>FastMCP</td><td>3.4.2</td><td>All three sidecars use the same version</td></tr>
+  <tr><td>Transport</td><td>streamable_http_app()</td><td>FastMCP native</td><td>ASGI app wrapping the MCP protocol</td></tr>
+  <tr><td>Server</td><td>uvicorn[standard]</td><td>0.29+</td><td>Runs the ASGI app on the assigned port</td></tr>
+  <tr><td>Rate seeding</td><td>hashlib.md5</td><td>stdlib</td><td>Deterministic rate generation per agency/brand+city</td></tr>
+</table>
+
+<h3>Infrastructure Stack</h3>
+<table>
+  <tr><th>Component</th><th>Technology</th><th>Version</th><th>Notes</th></tr>
+  <tr><td>Database</td><td>MongoDB</td><td>7.x</td><td>nva_db, port 27117</td></tr>
+  <tr><td>Reverse proxy</td><td>nginx</td><td>alpine</td><td>Port 3010, SSE buffering disabled</td></tr>
+  <tr><td>Container runtime</td><td>Docker + Compose</td><td>v2</td><td>7-service compose file</td></tr>
+  <tr><td>CI/CD</td><td>GitHub Actions</td><td>—</td><td>pytest + tsc + docker build</td></tr>
+  <tr><td>OS</td><td>Linux (Docker)</td><td>—</td><td>All containers use Debian/Alpine base</td></tr>
+</table>
+
+<h3>Multi-Frontend Comparison</h3>
+<table>
+  <tr><th>Variant</th><th>Design System</th><th>Port</th><th>Framework Version</th><th>Key Components</th></tr>
+  <tr><td>Primary</td><td>Tailwind CSS 3 (custom)</td><td>5210</td><td>React 18</td><td>FlightCard, BookingWizard, McpInspectorPanel, AdminPanel (12 tabs)</td></tr>
+  <tr><td>Spectrum S2</td><td>Adobe React Spectrum 2</td><td>5211</td><td>React 19</td><td>TableView for search results, ToastQueue for notifications, ActionButton</td></tr>
+  <tr><td>Angular M3</td><td>Angular Material 3</td><td>4210</td><td>Angular 18</td><td>MatTable, MatSnackBar, violet M3 theme tokens</td></tr>
+</table>
+
+<p>All three frontends connect to the same backend API and MongoDB. The multi-frontend architecture demonstrates that the platform is design-system agnostic — the agent pipeline, MCP tool calls, and SSE streaming contract are frontend-independent.</p>
+
+<h3>Security Considerations</h3>
+<ul>
+  <li><strong>Authentication:</strong> JWT HS256 tokens with 24-hour expiry; bcrypt password hashing with 12 rounds</li>
+  <li><strong>Authorization:</strong> Role-based claims (<code>is_admin</code>) checked on every admin endpoint via FastAPI dependency injection</li>
+  <li><strong>Input validation:</strong> All API request bodies validated via Pydantic v2 models; no raw SQL or MongoDB injection surface (Motor uses typed query builders)</li>
+  <li><strong>MCP isolation:</strong> MCP sidecars are not exposed publicly — they are only reachable on the internal <code>nva-net</code> Docker network. No nginx proxy for sidecar ports.</li>
+  <li><strong>API keys:</strong> Azure OpenAI and Anthropic keys are environment variables never written to code or config files; <code>.env.example</code> documents required variables without values</li>
+  <li><strong>Demo credentials:</strong> traveller/travel123 and admin/admin123 are demo-only seeds; production deployment should rotate credentials and enforce stronger password policy</li>
+</ul>
+
+<div class="page-footer">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>§16 Technology Stack</span>
+  <span>Page 19</span>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     §17 CONCLUSION & FUTURE WORK
+══════════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+<h2 style="margin-top:0;"><span class="section-num">§17</span> Conclusion &amp; Future Work</h2>
+
+<h3>What Was Built</h3>
+<p>navanVoyageAI delivers a complete, demonstrable multi-agent AI platform for corporate travel in a single-command Docker deployment. In 70+ story points across six sprints, the platform evolved from a bare scaffold to a system with six cooperating AI agents, three MCP tool sidecars serving 88,000+ mock travel records, a full booking workflow with NVA reference numbers, a twelve-tab administrator console, Tree of Thought reasoning for complex queries, a dual-tier memory system, three frontend variants, and asynchronous LLM-as-Judge evaluation on every response.</p>
+
+<p>The platform demonstrates that modern AI agent architectures can handle a real business domain — corporate travel — with policy compliance, auditability, and operational transparency requirements that are typically hard to satisfy with simple LLM deployments. The key architectural bets that proved out:</p>
+
+<ul>
+  <li><strong>MCP for tool separation</strong> — isolating each travel domain (flights, cars, hotels) into its own sidecar made individual tools independently testable and deployable, and made the tool contract visible to administrators without code changes.</li>
+  <li><strong>Deterministic PolicyAgent</strong> — removing LLM inference from compliance-critical decisions eliminated hallucinated policy verdicts and made the audit log trustworthy.</li>
+  <li><strong>Fire-and-forget JudgeAgent</strong> — decoupling evaluation from the user-facing response ensured that quality monitoring added zero latency to the interactive experience.</li>
+  <li><strong>SSE event taxonomy</strong> — a well-structured event schema that covers agent lifecycle, MCP tool calls, Tree of Thought branches, and policy verdicts gave the frontend enough data to build rich real-time transparency UI without custom instrumentation per feature.</li>
+</ul>
+
+<h3>Capstone Objectives — Achievement Summary</h3>
+<table>
+  <tr><th>Objective</th><th>Status</th><th>Evidence</th></tr>
+  <tr><td>≥4 cooperating AI agents</td><td class="pill pill-green">Met</td><td>6 agents: Orchestrator, Search, Policy, Destination, Booking, Judge</td></tr>
+  <tr><td>External tool API integration via structured protocol</td><td class="pill pill-green">Met</td><td>FastMCP 3.4.2, 3 sidecars, 9 tools</td></tr>
+  <tr><td>Real-time LLM evaluation and observability</td><td class="pill pill-green">Met</td><td>JudgeAgent, 5-criteria scores, Gantt trace, Eval Metrics tab</td></tr>
+  <tr><td>Production-credible deployment</td><td class="pill pill-green">Met</td><td>Docker Compose, nginx, CI/CD GitHub Actions, JWT auth</td></tr>
+  <tr><td>20-minute live demo capability</td><td class="pill pill-green">Met</td><td>5 documented demo scenarios, quick-action chips in UI</td></tr>
+</table>
+
+<h3>Known Limitations (Demo Scope)</h3>
+<ul>
+  <li><strong>Mock data only:</strong> No real Amadeus, Hertz/Avis, or Marriott API integration. All travel data is synthetic and seeded deterministically.</li>
+  <li><strong>Single-host deployment:</strong> The Docker Compose setup is single-machine. A production deployment would require Kubernetes or a managed container platform with horizontal scaling for the backend.</li>
+  <li><strong>No payment processing:</strong> The booking wizard captures passenger details and generates reference numbers but does not integrate with a payment provider. PCI-DSS scope was explicitly out of scope.</li>
+  <li><strong>JWT expiry management:</strong> Token refresh is implemented but the frontend does not auto-refresh silently on expiry in the current demo build.</li>
+  <li><strong>Single-language UI:</strong> The frontend is English-only. Internationalisation (i18n) was not in scope for the capstone.</li>
+</ul>
+
+<h3>Future Work</h3>
+<div class="two-col">
+<div>
+  <h4>AI Enhancements</h4>
+  <ul>
+    <li><strong>Real-time ToT expansion</strong> — surface individual ToT branch thoughts as they stream, rather than revealing only the selected branch</li>
+    <li><strong>Multi-agent debate</strong> — have PolicyAgent and SearchAgent negotiate directly when a preferred option is non-compliant</li>
+    <li><strong>Retrieval-Augmented Generation</strong> — embed the full corporate policy document corpus for nuanced sub-clause matching beyond the six structured policies</li>
+    <li><strong>Personalised ranker</strong> — fine-tune a lightweight model on user booking history to re-rank search results by individual preference</li>
+    <li><strong>Proactive recommendations</strong> — periodic background agent that monitors upcoming bookings and suggests cheaper alternatives when prices drop</li>
+  </ul>
+</div>
+<div>
+  <h4>Platform Enhancements</h4>
+  <ul>
+    <li><strong>Real API integration</strong> — connect to the live Amadeus Developer API, replacing the mock sidecar with real flight data</li>
+    <li><strong>Approval workflow</strong> — when a booking violates policy, route it to the traveller's manager for approval via email or Slack integration</li>
+    <li><strong>Mobile app</strong> — React Native frontend sharing the same backend API and MCP infrastructure</li>
+    <li><strong>Multi-tenant</strong> — separate policy sets and employee directories per company, with tenant-scoped data isolation in MongoDB</li>
+    <li><strong>Cost optimiser agent</strong> — dedicated agent that monitors live prices post-booking and alerts when a better option becomes available before the booking window closes</li>
+  </ul>
+</div>
+</div>
+
+<h3>Acknowledgements</h3>
+<p>navanVoyageAI was designed and built as a CMU MSIT Capstone project demonstrating applied multi-agent AI system architecture. The platform builds on the open-source FastMCP, FastAPI, Motor, and React ecosystems, and leverages Azure OpenAI and (optionally) Anthropic Claude for LLM inference. The <code>EnterpriseDataAgent</code> platform provided the architectural foundation and agent design patterns that navanVoyageAI extends into the travel domain.</p>
+
+<div class="callout" style="margin-top:20pt;">
+  <strong>Repository:</strong> <code>github.com/rmssoftwaretech/navanVoyageAI</code><br>
+  <strong>Demo access:</strong> <code>http://localhost:3010</code> after <code>docker compose up --build</code><br>
+  <strong>Admin credentials:</strong> admin / admin123 (demo seed only — rotate before any production use)
+</div>
+
+<div class="page-footer" style="margin-top:30pt;">
+  <span>navanVoyageAI · Technical Report</span>
+  <span>§17 Conclusion &amp; Future Work</span>
+  <span>Page 20</span>
+</div>
+</div>
+
+</body>
+</html>

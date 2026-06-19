@@ -163,6 +163,17 @@ async def get_all_conversations(
     return await cursor.to_list(length=limit)
 
 
+@router.delete("/conversations/{conversation_id}")
+async def delete_conversation(conversation_id: str, _: dict = Depends(require_admin)) -> dict:
+    db = await get_db()
+    if db is None:
+        raise HTTPException(status_code=503, detail="Database unavailable")
+    result = await db["nva_conversations"].delete_one({"conversation_id": conversation_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    return {"deleted": conversation_id}
+
+
 # ── Embedding models ──────────────────────────────────────────────────────────
 
 @router.get("/embedding-models")

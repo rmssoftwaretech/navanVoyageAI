@@ -40,6 +40,7 @@ export default function AdminPanel({ user, onClose }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>('models')
   const [promptsDirty, setPromptsDirty] = useState(false)
   const [isDark, setIsDark] = useState(() => loadSavedTheme().dark)
+  const [fullPage, setFullPage] = useState(false)
 
   function toggleDark() {
     const next = isDark
@@ -61,10 +62,11 @@ export default function AdminPanel({ user, onClose }: AdminPanelProps) {
         style={{
           display: 'flex',
           flexDirection: 'column',
-          width: '75vw',
-          height: '75vh',
+          width: fullPage ? '100vw' : '75vw',
+          height: fullPage ? '100vh' : '75vh',
           boxShadow: '0 4px 32px rgba(0,0,0,0.22)',
           background: 'var(--bg-surface)',
+          transition: 'width 0.2s, height 0.2s',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -78,6 +80,22 @@ export default function AdminPanel({ user, onClose }: AdminPanelProps) {
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Full-page toggle */}
+            <button
+              onClick={() => setFullPage((v) => !v)}
+              title={fullPage ? 'Restore window' : 'Expand to full page'}
+              style={{
+                background: 'rgba(255,255,255,0.15)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                color: '#fff',
+                borderRadius: 'var(--r-md)',
+                padding: '3px 10px',
+                fontSize: 'var(--text-sm)',
+                cursor: 'pointer',
+              }}
+            >
+              {fullPage ? '⊡ Restore' : '⊞ Full Page'}
+            </button>
             {/* Dark mode toggle */}
             <button
               onClick={toggleDark}

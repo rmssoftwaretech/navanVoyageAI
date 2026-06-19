@@ -14,8 +14,12 @@ router = APIRouter(prefix="/mcp", tags=["mcp"])
 # service name.  When the frontend sends the "public" localhost URL, rewrite it
 # to the internal hostname so the backend container can reach it.
 _URL_REWRITES = {
-    "http://localhost:8101": "http://amadeus-mcp:8101",
-    "http://127.0.0.1:8101": "http://amadeus-mcp:8101",
+    "http://localhost:8101":   "http://amadeus-mcp:8101",
+    "http://127.0.0.1:8101":  "http://amadeus-mcp:8101",
+    "http://localhost:8102":   "http://car-rental-mcp:8102",
+    "http://127.0.0.1:8102":  "http://car-rental-mcp:8102",
+    "http://localhost:8103":   "http://hotel-booking-mcp:8103",
+    "http://127.0.0.1:8103":  "http://hotel-booking-mcp:8103",
 }
 
 

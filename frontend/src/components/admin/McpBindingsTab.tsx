@@ -43,20 +43,33 @@ function StatusDot({ status }: { status: string }) {
 // ── Tool chip ─────────────────────────────────────────────────────────────────
 
 const TOOL_COLORS: Record<string, { bg: string; text: string }> = {
-  search_flights: { bg: '#dbeafe', text: '#1d4ed8' },
-  search_hotels:  { bg: '#dcfce7', text: '#15803d' },
-  search_cars:    { bg: '#ede9fe', text: '#6d28d9' },
+  search_flights:  { bg: '#dbeafe', text: '#1d4ed8' },
+  search_hotels:   { bg: '#dcfce7', text: '#15803d' },
+  search_cars:     { bg: '#ede9fe', text: '#6d28d9' },
+  book_car:        { bg: '#fef3c7', text: '#b45309' },
+  cancel_car:      { bg: '#fee2e2', text: '#b91c1c' },
+  book_hotel:      { bg: '#d1fae5', text: '#065f46' },
+  cancel_hotel:    { bg: '#fee2e2', text: '#b91c1c' },
+}
+
+const TOOL_ICONS: Record<string, string> = {
+  search_flights: '✈',
+  search_hotels:  '🏨',
+  search_cars:    '🚗',
+  book_car:       '🔑',
+  cancel_car:     '✕',
+  book_hotel:     '🛎',
+  cancel_hotel:   '✕',
 }
 
 function ToolChip({ name, onClick }: { name: string; onClick?: () => void }) {
   const c = TOOL_COLORS[name] ?? { bg: 'var(--border)', text: 'var(--text-muted)' }
-  const icons: Record<string, string> = { search_flights: '✈', search_hotels: '🏨', search_cars: '🚗' }
   return (
     <button
       onClick={onClick}
       style={{ fontSize: 9, padding: '2px 8px', borderRadius: 'var(--r-full)', background: c.bg, color: c.text, fontWeight: 700, whiteSpace: 'nowrap', border: 'none', cursor: onClick ? 'pointer' : 'default' }}
     >
-      {icons[name] ?? '⚙'} {name}
+      {TOOL_ICONS[name] ?? '⚙'} {name}
     </button>
   )
 }
@@ -131,7 +144,6 @@ function ToolSchemaCard({ tool, defaultOpen }: { tool: McpToolSchema; defaultOpe
 
 function ServerCard({ server }: { server: McpServer }) {
   const isOk = server.status === 'connected'
-  const staticCounts = Object.entries(server.static_data ?? {}).filter(([, v]) => v)
 
   return (
     <div style={{ ...CARD, borderLeft: `3px solid ${isOk ? 'var(--success)' : 'var(--danger)'}` }}>
@@ -159,25 +171,15 @@ function ServerCard({ server }: { server: McpServer }) {
 
       <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: 10 }}>{server.description}</p>
 
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        {/* Data stats */}
-        {staticCounts.map(([k]) => {
-          const labels: Record<string, string> = { mock_flights: '36k flights', mock_hotels: '39k hotels', mock_cars: '12k cars' }
-          return (
-            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ fontSize: 10, color: 'var(--success)' }}>✓</span>
-              <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>{labels[k] ?? k}</span>
-            </div>
-          )
-        })}
-        {/* Amadeus live */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ fontSize: 10, color: server.amadeus_live ? 'var(--success)' : 'var(--text-dim)' }}>
-            {server.amadeus_live ? '✓' : '○'}
-          </span>
-          <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>Amadeus live API</span>
+      {/* Tool chips for this server */}
+      {server.tools.length > 0 && (
+        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontSize: 9, color: 'var(--text-dim)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tools:</span>
+          {server.tools.map((t: { name: string }) => (
+            <ToolChip key={t.name} name={t.name} />
+          ))}
         </div>
-      </div>
+      )}
 
       {server.error && (
         <p style={{ ...MONO, fontSize: 10, color: 'var(--danger)', marginTop: 8, padding: '4px 8px', background: '#fee2e2', borderRadius: 'var(--r-sm)' }}>

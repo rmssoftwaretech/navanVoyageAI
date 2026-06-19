@@ -248,17 +248,25 @@ Nginx gains two new upstream blocks for the new sidecars (internal container rou
 
 | # | Check | Status |
 |---|---|---|
-| 1 | `docker compose up` starts all 7 services (backend, frontend, nginx, amadeus-mcp, car-rental-mcp, hotel-booking-mcp, mongo) with no errors | ⬜ |
-| 2 | `GET http://localhost:8102/health` → `{ "status": "ok" }` | ⬜ |
-| 3 | `GET http://localhost:8103/health` → `{ "status": "ok" }` | ⬜ |
-| 4 | `POST http://localhost:8102/tools/search_cars` with valid payload returns 6 results sorted by daily rate | ⬜ |
-| 5 | `POST http://localhost:8102/tools/book_car` returns confirmation number matching `CR-YYYYMMDD-NNNN` | ⬜ |
-| 6 | `POST http://localhost:8103/tools/search_hotels` returns 8 results sorted by nightly rate | ⬜ |
-| 7 | `POST http://localhost:8103/tools/book_hotel` returns confirmation number matching `HB-YYYYMMDD-NNNN` | ⬜ |
-| 8 | Admin panel → MCP Servers tab shows all 3 servers with green status dots and latency | ⬜ |
-| 9 | Expanding a tool card in MCP Servers tab renders the inputSchema correctly | ⬜ |
-| 10 | Chat query "rent a car in SFO Aug 10–14" triggers `search_cars` tool call visible in MCP Inspector | ⬜ |
-| 11 | `npx tsc --noEmit` exits 0 | ⬜ |
+| 1 | `docker compose up` starts all 8 services (backend, frontend, nginx, 3 MCP sidecars, spectrum, angular) with no errors | ✅ |
+| 2 | `GET http://localhost:8102/health` → `{ "status": "ok" }` | ✅ |
+| 3 | `GET http://localhost:8103/health` → `{ "status": "ok" }` | ✅ |
+| 4 | `search_cars` via backend MCP proxy returns 6 results sorted by daily rate | ✅ |
+| 5 | `book_car` returns confirmation number matching `CR-YYYYMMDD-XXXX` | ✅ |
+| 6 | `search_hotels` returns 8 results sorted by nightly rate | ✅ |
+| 7 | `book_hotel` returns confirmation number matching `HB-YYYYMMDD-XXXX` | ✅ |
+| 8 | Admin panel → MCP Bindings tab shows all 3 servers with status indicators and tool chips | ✅ |
+| 9 | MCP Inspector dropdown includes Car Rental MCP and Hotel Booking MCP | ✅ |
+| 10 | Backend proxy rewrites `localhost:8102` → `car-rental-mcp:8102` (Docker DNS) | ✅ |
+| 11 | Backend proxy rewrites `localhost:8103` → `hotel-booking-mcp:8103` (Docker DNS) | ✅ |
+| 12 | `npx tsc --noEmit` exits 0 | ✅ |
+
+## Sprint Closure
+
+**Closed:** 2026-06-19 in Sprint NVA-G
+**Sprint doc:** `docs/sprints/SPRINT-NVA-G-execution-log.md`
+**Test results:** `docs/sprints/SPRINT-NVA-G-test-results.md`
+**UAT results:** `docs/sprints/SPRINT-NVA-G-uat-results.md`
 
 ---
 

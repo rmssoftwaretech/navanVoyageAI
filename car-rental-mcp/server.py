@@ -225,6 +225,6 @@ async def _tools_route(request: Request) -> _JSONResponse:
 if __name__ == "__main__":
     import uvicorn
     port = 8102
-    log.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO)
     log.info("Starting car-rental-mcp on :%d  (MCP at /mcp, health at /health)", port)
-    uvicorn.run(mcp.streamable_http_app(), host="0.0.0.0", port=port, log_level="info")
+    uvicorn.run(mcp.http_app(), host="0.0.0.0", port=port, log_level="info")

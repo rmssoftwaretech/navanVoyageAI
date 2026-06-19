@@ -1,15 +1,17 @@
 import { useState } from 'react'
 import { reactToTurn } from '@/services/chat'
 
-const EMOJIS = ['✈', '⭐', '👍', '👎', '❓']
+const EMOJIS = ['✈', '🔖', '👍', '👎', '❓']
 
 interface ReactionBarProps {
   conversationId?: string
   turnIndex?: number
   initial?: Record<string, number>
+  starred?: boolean
+  onStar?: () => void
 }
 
-export default function ReactionBar({ conversationId, turnIndex, initial = {} }: ReactionBarProps) {
+export default function ReactionBar({ conversationId, turnIndex, initial = {}, starred, onStar }: ReactionBarProps) {
   const [reactions, setReactions] = useState<Record<string, number>>(initial)
   const [myReaction, setMyReaction] = useState<string | null>(null)
 
@@ -22,6 +24,27 @@ export default function ReactionBar({ conversationId, turnIndex, initial = {} }:
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      {/* Star button — first so it's easiest to reach */}
+      {onStar !== undefined && (
+        <button
+          onClick={onStar}
+          title={starred ? 'Unstar this message' : 'Star this message'}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+            padding: '2px 8px', fontSize: 14, lineHeight: 1.4,
+            background: starred ? 'rgba(217,119,6,0.12)' : 'var(--bg-page)',
+            border: `1px solid ${starred ? 'rgba(217,119,6,0.5)' : 'var(--border)'}`,
+            borderRadius: 'var(--r-full)',
+            color: starred ? '#D97706' : 'var(--text-muted)',
+            cursor: 'pointer', transition: 'all 0.12s',
+          }}
+          onMouseEnter={(e) => { if (!starred) e.currentTarget.style.borderColor = '#D97706' }}
+          onMouseLeave={(e) => { if (!starred) e.currentTarget.style.borderColor = 'var(--border)' }}
+        >
+          {starred ? '⭐' : '☆'}
+        </button>
+      )}
+
       {EMOJIS.map((emoji) => {
         const count = reactions[emoji] ?? 0
         const active = emoji === myReaction

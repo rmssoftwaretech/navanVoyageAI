@@ -42,10 +42,20 @@ export default function ChatPage() {
     } catch { /* ignore */ }
   }
 
-  function handleStarChange(conversationId: string, hasStarred: boolean) {
-    if (hasStarred) {
-      setConversations((prev) => prev.map((c) => c.conversation_id === conversationId ? { ...c, has_starred: true } : c))
-    }
+  function handleStarChange(conversationId: string, hasStarred: boolean, turnIndex: number) {
+    setConversations((prev) => prev.map((c) =>
+      c.conversation_id === conversationId ? { ...c, has_starred: hasStarred || c.has_starred } : c
+    ))
+    setTurns((prev) => prev.map((t, i) => i === turnIndex ? { ...t, starred: hasStarred } : t))
+  }
+
+  async function handleDeleteConversation(id: string) {
+    if (!window.confirm('Delete this conversation?')) return
+    try {
+      await import('@/services/admin').then(m => m.deleteAdminConversation(id))
+      setConversations((prev) => prev.filter((c) => c.conversation_id !== id))
+      if (activeId === id) { setActiveId(null); setTurns([]) }
+    } catch { /* ignore */ }
   }
   const [panelMode, setPanelMode] = useState(
     () => localStorage.getItem('nva_panel_mode') === 'true'
@@ -250,6 +260,7 @@ export default function ChatPage() {
         debugMode={debugMode}
         onDebugToggle={toggleDebug}
         onRenameConversation={handleRenameConversation}
+        onDeleteConversation={handleDeleteConversation}
         inspector={
           <McpInspectorPanel
             events={inspectorEvents}

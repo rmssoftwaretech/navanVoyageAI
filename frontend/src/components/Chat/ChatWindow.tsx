@@ -17,7 +17,7 @@ interface ChatWindowProps {
   debugMode?: boolean
   conversationId?: string
   onAttachmentChange?: (filename: string | null, context: string | null) => void
-  onStarChange?: (conversationId: string, hasStarred: boolean) => void
+  onStarChange?: (conversationId: string, hasStarred: boolean, turnIndex: number) => void
 }
 
 export default function ChatWindow({

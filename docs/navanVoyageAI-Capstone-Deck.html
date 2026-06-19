@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>navanVoyageAI — CMU Capstone Demo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+  :root {
+    --navy:  #1E3A5F;
+    --navy2: #16304f;
+    --gold:  #D97706;
+    --gold2: #B45309;
+    --white: #FFFFFF;
+    --off:   #F8F9FB;
+    --muted: #64748b;
+    --border:#e2e8f0;
+    --green: #065F46;
+    --green-bg: #D1FAE5;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', Arial, sans-serif;
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  /* ── Slide shell ──────────────────────────────────────────────────────── */
+  .slide {
+    width: 297mm;
+    min-height: 167mm;
+    background: var(--white);
+    margin: 0 auto 24px;
+    padding: 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+    position: relative;
+    overflow: hidden;
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Top accent bar ───────────────────────────────────────────────────── */
+  .slide-bar {
+    height: 6px;
+    background: linear-gradient(90deg, var(--navy) 0%, var(--gold) 100%);
+    flex-shrink: 0;
+  }
+
+  /* ── Header band ──────────────────────────────────────────────────────── */
+  .slide-header {
+    background: var(--navy);
+    color: var(--white);
+    padding: 18px 36px 16px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .slide-header .brand {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+  }
+  .slide-header .slide-num {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.4);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .slide-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+  .slide-header .gold-bar {
+    width: 36px;
+    height: 3px;
+    background: var(--gold);
+    margin-top: 7px;
+  }
+
+  /* ── Body ─────────────────────────────────────────────────────────────── */
+  .slide-body {
+    flex: 1;
+    padding: 28px 36px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ── Utilities ────────────────────────────────────────────────────────── */
+  .label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .tag {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 2px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .tag-navy  { background: var(--navy);  color: #fff; }
+  .tag-gold  { background: var(--gold);  color: #fff; }
+  .tag-green { background: var(--green-bg); color: var(--green); }
+  .tag-gray  { background: #f1f5f9; color: var(--muted); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+
+  .card {
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    background: var(--off);
+    position: relative;
+  }
+  .card-navy {
+    border-left: 3px solid var(--navy);
+  }
+  .card-gold {
+    border-left: 3px solid var(--gold);
+  }
+  .card-green {
+    border-left: 3px solid #10b981;
+  }
+
+  .card h3 {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .card p, .card li {
+    font-size: 11px;
+    color: #475569;
+    line-height: 1.5;
+  }
+  .card ul { padding-left: 14px; }
+
+  .stat-block {
+    text-align: center;
+    padding: 16px 8px;
+    border: 1px solid var(--border);
+    background: var(--off);
+  }
+  .stat-block .num {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .stat-block .unit {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 2px;
+  }
+  .stat-block .desc {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .pill {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    color: var(--navy);
+    background: var(--off);
+  }
+
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+  }
+  .flow-step {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--white);
+    background: var(--navy);
+    padding: 5px 12px;
+  }
+  .flow-arrow {
+    font-size: 11px;
+    color: var(--gold);
+    padding: 0 2px;
+    font-weight: 700;
+  }
+
+  .mono {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  table.data-table th {
+    background: var(--navy);
+    color: #fff;
+    padding: 6px 10px;
+    text-align: left;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  table.data-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    color: #334155;
+    vertical-align: top;
+  }
+  table.data-table tr:nth-child(even) td { background: var(--off); }
+
+  /* ── Slide 1 — Title ─────────────────────────────────────────────────── */
+  .title-slide {
+    background: var(--navy);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 48px 56px;
+    min-height: 167mm;
+  }
+  .title-slide .eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 16px;
+  }
+  .title-slide h1 {
+    font-size: 42px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    margin-bottom: 6px;
+  }
+  .title-slide .subtitle {
+    font-size: 16px;
+    font-weight: 300;
+    color: rgba(255,255,255,0.65);
+    margin-bottom: 32px;
+    max-width: 460px;
+    line-height: 1.5;
+  }
+  .title-slide .meta-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .title-slide .meta-item {
+    border-left: 2px solid var(--gold);
+    padding-left: 10px;
+  }
+  .title-slide .meta-item .k {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.45);
+  }
+  .title-slide .meta-item .v {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+  }
+  .title-slide .bg-pattern {
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 38%;
+    background: repeating-linear-gradient(
+      -45deg,
+      rgba(255,255,255,0.02) 0px,
+      rgba(255,255,255,0.02) 1px,
+      transparent 1px,
+      transparent 12px
+    );
+    pointer-events: none;
+  }
+  .title-slide .gold-accent {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--gold) 0%, rgba(217,119,6,0.2) 100%);
+  }
+
+  /* ── Footer ──────────────────────────────────────────────────────────── */
+  .footer {
+    padding: 8px 36px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .footer span {
+    font-size: 9px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .footer .dot {
+    width: 5px; height: 5px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+
+  @media print {
+    body { background: white; }
+    .slide { margin: 0; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SLIDE 1 — TITLE
+═══════════════════════════════════════════════════════════════════ -->
+<div class="slide" style="page-break-after:always;">
+  <div class="title-slide">
+    <div class="bg-pattern"></div>
+    <p class="eyebrow">CMU Capstone Demo · 2026</p>
+    <h1>navanVoyageAI</h1>
+    <p class="subtitle">A corporate travel multi-agent AI platform — six specialist agents, three MCP sidecars, and three independent frontend implementations on a single FastAPI backend.</p>
+    <div class="meta-row">
+      <div class="meta-item"><div class="k">Platform</div><div class="v">Corporate Travel Assistant</div></div>
+      <div class="meta-item"><div class="k">Architecture</div><div class="v">Multi-Agent + MCP</div></div>
+      <div class="meta-item"><div class="k">Frontends</div><div class="v">3 Design Systems</div></div>
+      <div class="meta-item"><div class="k">Stories Delivered</div><div class="v">22 Stories · 100+ pts</div></div>
+    </div>
+    <div class="gold-accent"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SLIDE 2 — PLATFORM OVERVIEW
+═══════════════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-bar"></div>
+  <div class="slide-header">
+    <div>
+      <div class="brand">navanVoyageAI</div>
+      <h2>Platform Overview</h2>
+      <div class="gold-bar"></div>
+    </div>
+    <div class="slide-num">02 / 08</div>
+  </div>
+  <div class="slide-body">
+
+    <div class="grid-4">
+      <div class="stat-block">
+        <div class="num">6</div>
+        <div class="unit">AI Agents</div>
+        <div class="desc">Orchestrator · Search · Policy · Destination · Booking · Judge</div>
+      </div>
+      <div class="stat-block">
+        <div class="num">3</div>
+        <div class="unit">MCP Sidecars</div>
+        <div class="desc">Amadeus · Car Rental · Hotel Booking (FastMCP)</div>
+      </div>
+      <div class="stat-block">
+        <div class="num">88k+</div>
+        <div class="unit">Mock Records</div>
+        <div class="desc">36k flights · 39k hotels · 12k car rentals</div>
+      </div>
+      <div class="stat-block">
+        <div class="num">3</div>
+        <div class="unit">UI Variants</div>
+        <div class="desc">Tailwind CSS · React Spectrum S2 · Angular Material M3</div>
+      </div>
+    </div>
+
+    <div>
+      <p class="label">Request flow</p>
+      <div class="flow">
+        <div class="flow-step">User Message</div>
+        <div class="flow-arrow"> → </div>
+        <div class="flow-step">OrchestratorAgent</div>
+        <div class="flow-arrow"> → </div>
+        <div class="flow-step">SearchAgent</div>
+        <div class="flow-arrow"> + </div>
+        <div class="flow-step">PolicyAgent</div>
+        <div class="flow-arrow"> + </div>
+        <div class="flow-step">DestinationAgent</div>
+        <div class="flow-arrow"> → </div>
+        <div class="flow-step">Aggregated SSE Response</div>
+        <div class="flow-arrow"> → </div>
+        <div class="flow-step" style="background:var(--gold2);">JudgeAgent (async)</div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card card-navy">
+        <h3>Backend</h3>
+        <p>FastAPI · Python 3.12 · Motor (async MongoDB) · SSE streaming · JWT auth · 26 REST endpoints</p>
+      </div>
+      <div class="card card-gold">
+        <h3>Intelligence</h3>
+        <p>Azure OpenAI gpt-4o / gpt-5.4 · Anthropic Claude Opus (JudgeAgent flag) · OpenAI · Ollama — hot-swappable via Admin panel</p>
+      </div>
+      <div class="card card-green">
+        <h3>Infrastructure</h3>
+        <p>Docker Compose · 7 services · nginx reverse proxy · MongoDB Atlas · 3 FastMCP sidecars on separate ports</p>
+      </div>
+    </div>
+
+  </div>
+  <div class="footer">
+    <span><span class="dot"></span>navanVoyageAI — CMU Capstone 2026</span>
+    <span class="mono">github.com/rmssoftwaretech/navanVoyageAI</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SLIDE 3 — MULTI-AGENT PIPELINE
+═══════════════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-bar"></div>
+  <div class="slide-header">
+    <div>
+      <div class="brand">navanVoyageAI</div>
+      <h2>Multi-Agent Pipeline</h2>
+      <div class="gold-bar"></div>
+    </div>
+    <div class="slide-num">03 / 08</div>
+  </div>
+  <div class="slide-body">
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Agent</th>
+          <th>Model</th>
+          <th>MCP Role</th>
+          <th>Responsibility</th>
+          <th>Key Output</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>OrchestratorAgent</strong></td>
+          <td>gpt-4o</td>
+          <td><span class="tag tag-navy">Supervisor</span></td>
+          <td>Intent classification · parallel dispatch · Tree-of-Thought for complex queries · response aggregation</td>
+          <td>Final SSE answer streamed to UI</td>
+        </tr>
+        <tr>
+          <td><strong>SearchAgent</strong></td>
+          <td>gpt-5.4</td>
+          <td><span class="tag tag-gold">Active Caller</span></td>
+          <td>Extracts search params via LLM · calls flight / hotel / car MCP tools · formats structured results</td>
+          <td>Flight cards · hotel list · car options</td>
+        </tr>
+        <tr>
+          <td><strong>PolicyAgent</strong></td>
+          <td>gpt-4o</td>
+          <td><span class="tag tag-gray">Reader</span></td>
+          <td>Deterministic rule engine — checks class limits, advance booking windows, per-diem caps, preferred airlines</td>
+          <td>PolicyVerdict (approved / warn / block)</td>
+        </tr>
+        <tr>
+          <td><strong>DestinationAgent</strong></td>
+          <td>gpt-5.4</td>
+          <td><span class="tag tag-gray">Reader</span></td>
+          <td>Enriches responses with visa requirements, weather, local tips, currency, timezone</td>
+          <td>Structured destination briefing JSON</td>
+        </tr>
+        <tr>
+          <td><strong>BookingAgent</strong></td>
+          <td>gpt-5.4</td>
+          <td><span class="tag tag-gold">Active Caller</span></td>
+          <td>Creates / cancels bookings · generates <span class="mono">NVA-YYYY-NNNNN</span> references · writes to nva_bookings</td>
+          <td>Booking confirmation + reference ID</td>
+        </tr>
+        <tr>
+          <td><strong>JudgeAgent</strong></td>
+          <td>gpt-4o / Claude Opus</td>
+          <td><span class="tag" style="background:#f3f4f6;color:#6b7280">No MCP</span></td>
+          <td>LLM-as-judge — scores every response on 5 criteria async; fires after SSE stream closes</td>
+          <td>Eval score doc in nva_eval_scores</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div>
+      <p class="label">Advanced reasoning — Tree of Thought</p>
+      <div class="card card-navy" style="padding:10px 16px;">
+        <p>Complex queries (multi-city, open-ended policy questions) trigger <strong>ToT strategy</strong>: the Orchestrator generates 3 independent reasoning branches in parallel, scores each with the LLM, and selects the highest-scoring branch before streaming the final answer. ToT SSE events (<span class="mono">tot_start / tot_branch / tot_evaluate / tot_selected</span>) are visible in the MCP Inspector panel.</p>
+      </div>
+    </div>
+
+  </div>
+  <div class="footer">
+    <span><span class="dot"></span>navanVoyageAI — CMU Capstone 2026</span>
+    <span class="mono">6 agents · 1 orchestrator · 1 async judge</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SLIDE 4 — MCP ARCHITECTURE
+═══════════════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-bar"></div>
+  <div class="slide-header">
+    <div>
+      <div class="brand">navanVoyageAI</div>
+      <h2>Three-Sidecar MCP Architecture</h2>
+      <div class="gold-bar"></div>
+    </div>
+    <div class="slide-num">04 / 08</div>
+  </div>
+  <div class="slide-body">
+
+    <div class="grid-3">
+      <div class="card card-navy">
+        <h3>✈ Amadeus Travel MCP <span class="mono" style="font-size:9px;color:var(--muted)">port 8101</span></h3>
+        <ul>
+          <li><strong>Tool:</strong> <span class="mono">search_flights</span></li>
+          <li>36,288 static flight records</li>
+          <li>64 routes · 30 cities worldwide</li>
+          <li>Live Amadeus API fallback (sandbox)</li>
+          <li>Cabin class / date / price filters</li>
+        </ul>
+      </div>
+      <div class="card card-gold">
+        <h3>🚗 Car Rental MCP <span class="mono" style="font-size:9px;color:var(--muted)">port 8102</span></h3>
+        <ul>
+          <li><strong>Tools:</strong> <span class="mono">search_cars · book_car · cancel_car</span></li>
+          <li>6 agencies · 6 vehicle classes</li>
+          <li>20 IATA city codes</li>
+          <li>Deterministic rate seeding (md5 hash)</li>
+          <li>Confirmation: <span class="mono">CR-YYYYMMDD-XXXX</span></li>
+        </ul>
+      </div>
+      <div class="card card-green">
+        <h3>🏨 Hotel Booking MCP <span class="mono" style="font-size:9px;color:var(--muted)">port 8103</span></h3>
+        <ul>
+          <li><strong>Tools:</strong> <span class="mono">search_hotels · book_hotel · cancel_hotel</span></li>
+          <li>12 hotel brands · 4 star tiers</li>
+          <li>20 IATA city codes</li>
+          <li>Tier multipliers: 1× → 5.5×</li>
+          <li>Confirmation: <span class="mono">HB-YYYYMMDD-XXXX</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <p class="label">Protocol</p>
+        <div class="card" style="gap:6px;display:flex;flex-direction:column;">
+          <p>Each sidecar exposes three endpoints:</p>
+          <p><span class="mono">/mcp</span> — FastMCP Streamable-HTTP protocol (agent calls)</p>
+          <p><span class="mono">/health</span> — JSON health + version + data stats</p>
+          <p><span class="mono">/tools</span> — full inputSchema listing (Admin panel probe)</p>
+          <p style="margin-top:6px;">SearchAgent routes each tool to the correct sidecar at runtime: flights → 8101, hotels → 8103, cars → 8102.</p>
+        </div>
+      </div>
+      <div>
+        <p class="label">Admin visibility</p>
+        <div class="card" style="gap:6px;display:flex;flex-direction:column;">
+          <p>Admin → <strong>MCP Bindings</strong> tab probes all three sidecars on load:</p>
+          <p>● Green status dot + latency badge (e.g. <span class="mono">18ms</span>) for each</p>
+          <p>● Tool schemas with expand/collapse inputSchema viewer</p>
+          <p>● Per-agent binding matrix — which agents call which tools</p>
+          <p>● Every tool call emits <span class="mono">mcp_tool_call / mcp_tool_result</span> SSE events visible in the MCP Inspector panel</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="footer">
+    <span><span class="dot"></span>navanVoyageAI — CMU Capstone 2026</span>
+    <span class="mono">FastMCP 3.4.2 · 9 tools across 3 sidecars · 88,488 mock records</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SLIDE 5 — CHAT INTERFACE & SEARCH
+═══════════════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-bar"></div>
+  <div class="slide-header">
+    <div>
+      <div class="brand">navanVoyageAI</div>
+      <h2>Chat Interface &amp; Travel Search</h2>
+      <div class="gold-bar"></div>
+    </div>
+    <div class="slide-num">05 / 08</div>
+  </div>
+  <div class="slide-body">
+
+    <div class="grid-2">
+      <div>
+        <p class="label">Chat capabilities</p>
+        <div class="card card-navy">
+          <ul style="margin:0;">
+            <li><strong>SSE streaming</strong> — tokens arrive token-by-token; spinner while agent pipeline runs</li>
+            <li><strong>Short-term memory</strong> — last 5 turns in context window; Haiku extraction</li>
+            <li><strong>Long-term memory</strong> — user preferences persisted in <span class="mono">nva_user_memory</span> across sessions</li>
+            <li><strong>Conversation history</strong> — named threads, star/react/note per message</li>
+            <li><strong>Attachment context</strong> — upload a document to ground the conversation</li>
+            <li><strong>Share link</strong> — per-conversation share token for handoff</li>
+            <li><strong>Retry / regenerate</strong> — re-run any user turn with diff view</li>
+          </ul>
+        </div>
+      </div>
+
+      <div>
+        <p class="label">Structured search results</p>
+        <div class="card card-gold">
+          <ul>
+            <li><strong>TravelSearchForm</strong> — quick-search widget on empty chat; origin, destination, date, cabin</li>
+            <li><strong>FlightResultsPanel</strong> — rendered from assistant markdown; displays up to 5 FlightCards with carrier, route, price, stops, duration</li>
+            <li><strong>FlightCard Select →</strong> — single click opens the 3-step BookingWizard modal</li>
+            <li><strong>Hotel &amp; Car results</strong> — formatted lists with nightly rate and daily rate, returned inline in markdown response</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <p class="label">Three independent frontends — same FastAPI backend, same SSE stream</p>
+      <div class="grid-3">
+        <div class="stat-block">
+          <div class="num" style="font-size:18px;color:var(--navy);">Tailwind CSS</div>
+          <div class="unit">port 5210 · primary</div>
+          <div class="desc">Custom navy/gold design tokens · full feature set · BookingWizard · MCP Inspector Panel · Admin Console</div>
+        </div>
+        <div class="stat-block">
+          <div class="num" style="font-size:18px;color:var(--navy);">React Spectrum S2</div>
+          <div class="unit">port 5211 · Adobe S2</div>
+          <div class="desc">TableView · ToastQueue · ActionButton · booking_confirmed toast · admin modal with S2 components</div>
+        </div>
+        <div class="stat-block">
+          <div class="num" style="font-size:18px;color:var(--navy);">Angular Material M3</div>
+          <div class="unit">port 4210 · Google M3</div>
+          <div class="desc">Violet M3 theme · MatTable · MatSnackBar · showcase gallery · CDK overlay admin dialog</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="footer">
+    <span><span class="dot"></span>navanVoyageAI — CMU Capstone 2026</span>
+    <span class="mono">React 18 · React 19 · Angular 18 · FastAPI SSE</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SLIDE 6 — BOOKING WIZARD
+═══════════════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-bar"></div>
+  <div class="slide-header">
+    <div>
+      <div class="brand">navanVoyageAI</div>
+      <h2>3-Step Booking Wizard</h2>
+      <div class="gold-bar"></div>
+    </div>
+    <div class="slide-num">06 / 08</div>
+  </div>
+  <div class="slide-body">
+
+    <div class="grid-4">
+      <div class="card card-navy" style="text-align:center;">
+        <div style="font-size:22px;margin-bottom:6px;">①</div>
+        <h3>Passenger Details</h3>
+        <p>First/last name · date of birth · passport number + expiry · nationality · contact email. Required fields validated before Next is enabled.</p>
+      </div>
+      <div class="card card-gold" style="text-align:center;">
+        <div style="font-size:22px;margin-bottom:6px;">②</div>
+        <h3>Seat Preference</h3>
+        <p>Window / Aisle / No preference radio group. Meal preference: Standard · Vegetarian · Halal · Kosher. Optional special assistance field.</p>
+      </div>
+      <div class="card card-green" style="text-align:center;">
+        <div style="font-size:22px;margin-bottom:6px;">③</div>
+        <h3>Review &amp; Confirm</h3>
+        <p>Full summary card with flight, passenger, seat, total. Policy compliance checkbox required before Confirm Booking is enabled.</p>
+      </div>
+      <div class="card" style="text-align:center;border-left:3px solid #6d28d9;">
+        <div style="font-size:22px;margin-bottom:6px;">✓</div>
+        <h3>Confirmation</h3>
+        <p><span class="mono" style="font-size:11px;color:var(--navy);font-weight:700;">NVA-2026-NNNNN</span> reference displayed. Download Itinerary exports a print-ready HTML file. Reference echoed into the chat thread.</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <p class="label">Backend endpoint</p>
+        <div class="card" style="font-family:monospace;font-size:10.5px;color:#334155;line-height:1.8;">
+          <p><strong style="color:var(--gold);">POST</strong> /api/chat/bookings</p>
+          <p style="color:var(--muted);">→ generates NVA-YYYY-NNNNN</p>
+          <p style="color:var(--muted);">→ persists to nva_bookings collection</p>
+          <p style="color:var(--muted);">→ returns {booking_id, reference, status, created_at}</p>
+          <br>
+          <p><strong style="color:var(--navy);">GET</strong> /api/chat/bookings/{id}</p>
+          <p style="color:var(--muted);">→ user-scoped booking detail retrieval</p>
+        </div>
+      </div>
+      <div>
+        <p class="label">UX design decisions</p>
+        <div class="card">
+          <ul>
+            <li>Modal backdrop click cancels at any pre-confirmation step — no partial booking created</li>
+            <li>Stepper header shows numbered circles (active = navy, done = green ✓, connecting line turns green)</li>
+            <li>Confirm button disabled until policy checkbox is checked <em>and</em> booking is not submitting</li>
+            <li>Error banner surfaced for failed API call with retry path</li>
+            <li>Itinerary download is client-side only — Blob → anchor click, no server roundtrip</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="footer">
+    <span><span class="dot"></span>navanVoyageAI — CMU Capstone 2026</span>
+    <span class="mono">5 React components · POST /chat/bookings · nva_bookings</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SLIDE 7 — ADMIN CONSOLE
+═══════════════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-bar"></div>
+  <div class="slide-header">
+    <div>
+      <div class="brand">navanVoyageAI</div>
+      <h2>Admin Console — 12 Tabs</h2>
+      <div class="gold-bar"></div>
+    </div>
+    <div class="slide-num">07 / 08</div>
+  </div>
+  <div class="slide-body">
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+
+      <div class="card card-navy">
+        <h3>⚙ Model Selection</h3>
+        <p>Switch any agent between Azure OpenAI · OpenAI · Anthropic · Ollama. Temperature + max_tokens sliders. Changes hot-reload via <span class="mono">agents.json</span> — no restart required.</p>
+      </div>
+
+      <div class="card card-navy">
+        <h3>✏ Agent Prompts</h3>
+        <p>Edit system prompt for each agent in a monospace textarea. <strong>●</strong> dot on tab = unsaved changes. Save &amp; Reload writes to <span class="mono">config/prompts.json</span>; next request uses the new prompt. Reset to Default available.</p>
+      </div>
+
+      <div class="card card-navy">
+        <h3>🔌 MCP Bindings</h3>
+        <p>Live status dots + latency (ms) for all 3 MCP sidecars. Per-agent tool binding matrix. Full inputSchema viewer with expand/collapse per tool.</p>
+      </div>
+
+      <div class="card card-gold">
+        <h3>📋 Policy</h3>
+        <p>View and edit all 6 corporate travel policies: Standard Domestic · International · Executive · Company Executive · Sales Executive · Conference Traveller. Class limits, per-diem caps, advance booking windows.</p>
+      </div>
+
+      <div class="card card-gold">
+        <h3>👤 Employee Data</h3>
+        <p>100 employee records with department, travel tier, and policy assignment. CSV upload. Used by PolicyAgent to resolve per-employee limits.</p>
+      </div>
+
+      <div class="card card-gold">
+        <h3>🔔 Notifications</h3>
+        <p>Real-time admin alerts: new bookings, policy violations flagged by PolicyAgent, JudgeAgent low-score warnings. Dismissible notification stack.</p>
+      </div>
+
+      <div class="card card-green">
+        <h3>📒 Audit Log</h3>
+        <p>Searchable agent action log. Auto-refresh every 10s. Shows timestamp, user, agent, action, details. CSV export. Persists to <span class="mono">nva_audit_log</span>.</p>
+      </div>
+
+      <div class="card card-green">
+        <h3>💰 Billing</h3>
+        <p>Token usage and estimated cost by model / day. Pure CSS bar chart. Auto-refresh every 60s. CSV export. Reads from <span class="mono">nva_billing</span>.</p>
+      </div>
+
+      <div class="card card-green">
+        <h3>📊 Eval Metrics</h3>
+        <p>JudgeAgent 5-criteria scores (accuracy, policy, helpfulness, tone, safety). Pass/fail rate. Auto-refresh every 15s. Score drill-down per conversation. JSON export.</p>
+      </div>
+
+      <div class="card" style="border-left:3px solid #6d28d9;">
+        <h3>📡 Observability</h3>
+        <p>Per-conversation agent latency Gantt trace. Shows wall-clock time for each sub-agent call and MCP tool invocation. Identify bottlenecks at a glance.</p>
+      </div>
+
+      <div class="card" style="border-left:3px solid #6d28d9;">
+        <h3>💬 Chat History</h3>
+        <p>Searchable conversation list with starred messages, reaction badges, eval score indicators, and inline thread expansion. Export conversation as JSON.</p>
+      </div>
+
+      <div class="card" style="border-left:3px solid #6d28d9;">
+        <h3>🗂 Mock Data</h3>
+        <p>Browse all 88k flight, hotel, and car records used by the MCP sidecars. Filter by origin/city/date. Useful for demoing specific search scenarios.</p>
+      </div>
+
+    </div>
+
+  </div>
+  <div class="footer">
+    <span><span class="dot"></span>navanVoyageAI — CMU Capstone 2026</span>
+    <span class="mono">JWT admin guard · 75vw × 75vh modal · dark mode toggle</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SLIDE 8 — OBSERVABILITY & TECH STACK
+═══════════════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-bar"></div>
+  <div class="slide-header">
+    <div>
+      <div class="brand">navanVoyageAI</div>
+      <h2>LLM Observability &amp; Tech Stack</h2>
+      <div class="gold-bar"></div>
+    </div>
+    <div class="slide-num">08 / 08</div>
+  </div>
+  <div class="slide-body">
+
+    <div class="grid-2">
+      <div>
+        <p class="label">Per-message observability layers</p>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="card card-navy">
+            <h3>🔍 Debug Mode Panel</h3>
+            <p>Toggle with 🐞 button (persisted in localStorage). Collapsible panel under each assistant message listing: agents invoked, MCP tool name + input/output JSON, token counts, model used, latency. Powered by metadata on each SSE <span class="mono">done</span> event.</p>
+          </div>
+          <div class="card card-gold">
+            <h3>📈 Performance Metrics Row</h3>
+            <p>Always visible below every assistant bubble: latency chip (ms, computed frontend-side), input/output token counts, model label. Not gated — visible to all users.</p>
+          </div>
+          <div class="card card-green">
+            <h3>👍👎🚩 Reaction Bar</h3>
+            <p>Thumbs up / thumbs down / flag per message. Optional comment modal. Written to <span class="mono">nva_feedback</span> via <span class="mono">POST /api/chat/feedback</span>. Reactions visible in Admin → Chat History tab with gold border on starred messages.</p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="label">Full tech stack</p>
+        <table class="data-table">
+          <thead><tr><th>Layer</th><th>Technology</th></tr></thead>
+          <tbody>
+            <tr><td>Frontend (primary)</td><td>Vite 5 · React 18 · TypeScript · Tailwind CSS 3</td></tr>
+            <tr><td>Frontend (Spectrum)</td><td>React 19 · Adobe React Spectrum S2</td></tr>
+            <tr><td>Frontend (Angular)</td><td>Angular 18 · Angular Material M3 · CDK</td></tr>
+            <tr><td>Backend</td><td>FastAPI · Python 3.12 · Motor · asyncio</td></tr>
+            <tr><td>MCP</td><td>FastMCP 3.4.2 — 3 sidecars · 9 tools</td></tr>
+            <tr><td>Database</td><td>MongoDB · 7 collections (nva_db)</td></tr>
+            <tr><td>Auth</td><td>JWT HS256 · bcrypt · role-based (admin / traveller)</td></tr>
+            <tr><td>LLM Providers</td><td>Azure OpenAI · Anthropic · OpenAI · Ollama</td></tr>
+            <tr><td>Infra</td><td>Docker Compose · nginx:alpine · 7 containers</td></tr>
+            <tr><td>Dev workflow</td><td>TypeScript strict · Vite HMR · FastAPI reload</td></tr>
+          </tbody>
+        </table>
+
+        <div style="margin-top:12px;">
+          <p class="label">MongoDB collections</p>
+          <div class="pill-row">
+            <span class="pill">nva_conversations</span>
+            <span class="pill">nva_audit_log</span>
+            <span class="pill">nva_eval_scores</span>
+            <span class="pill">nva_bookings</span>
+            <span class="pill">nva_policies</span>
+            <span class="pill">nva_billing</span>
+            <span class="pill">nva_user_memory</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="footer">
+    <span><span class="dot"></span>navanVoyageAI — CMU Capstone 2026 · All rights reserved RMS Software Technology</span>
+    <span class="mono">github.com/rmssoftwaretech/navanVoyageAI</span>
+  </div>
+</div>
+
+</body>
+</html>

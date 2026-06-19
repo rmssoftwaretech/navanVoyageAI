@@ -58,6 +58,10 @@ export async function getAdminConversations(limit = 50): Promise<unknown[]> {
   return data
 }
 
+export async function deleteAdminConversation(conversationId: string): Promise<void> {
+  await apiClient.delete(`/admin/conversations/${conversationId}`)
+}
+
 // ── Structured policies ──────────────────────────────────────────────────────
 
 export interface StructuredPolicy {

@@ -52,6 +52,7 @@ interface ConversationSidebarProps {
   onSetContext?: () => void
   hasContext?: boolean
   onRename?: (id: string, title: string) => void
+  onDelete?: (id: string) => void
 }
 
 export default function ConversationSidebar({
@@ -62,11 +63,13 @@ export default function ConversationSidebar({
   onSetContext,
   hasContext = false,
   onRename,
+  onDelete,
 }: ConversationSidebarProps) {
   const [search, setSearch] = useState('')
   const [starredOnly, setStarredOnly] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState('')
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
   const editInputRef = useRef<HTMLInputElement>(null)
 
   function startEdit(id: string, currentTitle: string, e: React.MouseEvent) {
@@ -214,30 +217,30 @@ export default function ConversationSidebar({
 
             {items.map((c) => {
               const isActive = c.conversation_id === activeId
+              const isHovered = hoveredId === c.conversation_id
               return (
-                <button
+                <div
                   key={c.conversation_id}
+                  style={{ position: 'relative' }}
+                  onMouseEnter={() => setHoveredId(c.conversation_id)}
+                  onMouseLeave={() => setHoveredId(null)}
+                >
+                <button
                   onClick={() => onSelect(c.conversation_id)}
                   style={{
                     width: '100%',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 3,
-                    padding: '7px 12px',
+                    padding: '7px 32px 7px 12px',
                     textAlign: 'left',
-                    background: isActive ? 'var(--brand-light)' : 'transparent',
+                    background: isActive ? 'var(--brand-light)' : isHovered ? 'var(--bg-hover)' : 'transparent',
                     borderLeft: isActive ? '3px solid var(--brand)' : '3px solid transparent',
                     border: 'none',
                     borderTop: '1px solid transparent',
                     borderBottom: '1px solid transparent',
                     cursor: 'pointer',
                     transition: 'background 0.12s',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)'
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.background = isActive ? 'var(--brand-light)' : 'transparent'
                   }}
                 >
                   {editingId === c.conversation_id ? (
@@ -281,6 +284,23 @@ export default function ConversationSidebar({
                     <EvalBadge score={c.eval_score} passed={c.eval_passed} />
                   </div>
                 </button>
+                {onDelete && isHovered && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(c.conversation_id) }}
+                    title="Delete conversation"
+                    style={{
+                      position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)',
+                      width: 22, height: 22, border: 'none', borderRadius: 4,
+                      background: 'var(--danger-bg)', color: 'var(--danger)',
+                      cursor: 'pointer', fontSize: 12, display: 'flex',
+                      alignItems: 'center', justifyContent: 'center',
+                      opacity: isHovered ? 1 : 0, transition: 'opacity 0.1s',
+                    }}
+                  >
+                    🗑
+                  </button>
+                )}
+                </div>
               )
             })}
           </div>

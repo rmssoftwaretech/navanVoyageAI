@@ -46,5 +46,7 @@ export interface ConnectResult {
 }
 
 export const PRESET_SERVERS = [
-  { key: 'amadeus', label: 'Amadeus Travel MCP', url: 'http://localhost:8101/mcp' },
+  { key: 'amadeus',        label: 'Amadeus Travel MCP', url: 'http://localhost:8101/mcp' },
+  { key: 'car_rental',    label: 'Car Rental MCP',     url: 'http://localhost:8102/mcp' },
+  { key: 'hotel_booking', label: 'Hotel Booking MCP',  url: 'http://localhost:8103/mcp' },
 ] as const

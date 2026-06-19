@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { BUILTIN_THEMES, applyTheme, loadSavedTheme, saveTheme } from '@/services/themes'
 
-export default function ThemePicker() {
+export default function ThemePicker({ compact = false }: { compact?: boolean }) {
   const [open, setOpen] = useState(false)
   const [activeId, setActiveId] = useState(() => loadSavedTheme().id)
   const ref = useRef<HTMLDivElement>(null)
@@ -26,34 +26,46 @@ export default function ThemePicker() {
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          padding: '4px 10px',
-          fontSize: 'var(--text-sm)',
-          border: '1px solid rgba(255,255,255,0.3)',
-          background: 'transparent',
-          color: 'white',
-          cursor: 'pointer',
-          borderRadius: 'var(--r-md)',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        <span
+      {compact ? (
+        // Compact trigger for use inside dark-background dropdowns
+        <button
+          onClick={() => setOpen((o) => !o)}
+          title="Change theme"
           style={{
-            width: 10,
-            height: 10,
-            borderRadius: '50%',
-            background: active.brand,
-            border: '1.5px solid rgba(255,255,255,0.6)',
-            flexShrink: 0,
+            display: 'flex', alignItems: 'center', gap: 5,
+            background: 'none', border: 'none', cursor: 'pointer', padding: 2,
           }}
-        />
-        🎨 Theme ▾
-      </button>
+        >
+          <span style={{
+            width: 16, height: 16, borderRadius: '50%',
+            background: active.brand,
+            border: `2px solid ${active.brand}`,
+            outline: '1.5px solid rgba(0,0,0,0.15)',
+            outlineOffset: 1,
+            display: 'block',
+          }} />
+          <svg width="10" height="10" viewBox="0 0 20 20" fill="#6b7280">
+            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+        </button>
+      ) : (
+        <button
+          onClick={() => setOpen((o) => !o)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '4px 10px', fontSize: 'var(--text-sm)',
+            border: '1px solid rgba(255,255,255,0.3)',
+            background: 'transparent', color: 'white',
+            cursor: 'pointer', borderRadius: 'var(--r-md)', whiteSpace: 'nowrap',
+          }}
+        >
+          <span style={{
+            width: 10, height: 10, borderRadius: '50%',
+            background: active.brand, border: '1.5px solid rgba(255,255,255,0.6)', flexShrink: 0,
+          }} />
+          🎨 Theme ▾
+        </button>
+      )}
 
       {open && (
         <div

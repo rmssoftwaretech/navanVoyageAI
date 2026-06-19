@@ -1,11 +1,13 @@
 import { useRef, useState } from 'react'
 import AppHeader from './AppHeader'
 import ConversationSidebar from './ConversationSidebar'
+import SupportPanel from './SupportPanel'
 import type { Conversation, User } from '@/types/nva'
 
-const MIN_WIDTH = 300
-const MAX_WIDTH = 720
-const DEFAULT_WIDTH = 400
+const MIN_HEIGHT = 180
+const MAX_HEIGHT = 600
+const DEFAULT_HEIGHT = 280
+const PANEL_MODE_WIDTH = 420
 
 interface AppLayoutProps {
   user: User
@@ -16,6 +18,13 @@ interface AppLayoutProps {
   onAdminOpen: () => void
   inspectorOpen: boolean
   onInspectorToggle: () => void
+  onSetContext?: () => void
+  hasContext?: boolean
+  onRenameConversation?: (id: string, title: string) => void
+  panelMode?: boolean
+  onPanelModeToggle?: () => void
+  debugMode: boolean
+  onDebugToggle: () => void
   children: React.ReactNode
   inspector: React.ReactNode
 }
@@ -29,22 +38,30 @@ export default function AppLayout({
   onAdminOpen,
   inspectorOpen,
   onInspectorToggle,
+  onSetContext,
+  hasContext,
+  onRenameConversation,
+  panelMode = false,
+  onPanelModeToggle,
+  debugMode,
+  onDebugToggle,
   children,
   inspector,
 }: AppLayoutProps) {
-  const [panelWidth, setPanelWidth] = useState(DEFAULT_WIDTH)
+  const [panelHeight, setPanelHeight] = useState(DEFAULT_HEIGHT)
+  const [supportOpen, setSupportOpen] = useState(false)
   const dragging = useRef(false)
 
   function startResize(e: React.MouseEvent) {
     e.preventDefault()
     dragging.current = true
-    const startX = e.clientX
-    const startW = panelWidth
+    const startY = e.clientY
+    const startH = panelHeight
 
     function onMove(mv: MouseEvent) {
       if (!dragging.current) return
-      const delta = startX - mv.clientX // drag left = wider
-      setPanelWidth(Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startW + delta)))
+      const delta = startY - mv.clientY
+      setPanelHeight(Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, startH + delta)))
     }
     function onUp() {
       dragging.current = false
@@ -56,12 +73,58 @@ export default function AppLayout({
     document.addEventListener('mousemove', onMove)
     document.addEventListener('mouseup', onUp)
     document.body.style.userSelect = 'none'
-    document.body.style.cursor = 'ew-resize'
+    document.body.style.cursor = 'ns-resize'
   }
 
+  const header = (
+    <AppHeader
+      onAdminOpen={onAdminOpen}
+      onSupportOpen={() => setSupportOpen(true)}
+      username={user.display_name || user.username}
+      isAdmin={user.role === 'admin'}
+      debugMode={debugMode}
+      onDebugToggle={onDebugToggle}
+      panelMode={panelMode}
+      onPanelModeToggle={onPanelModeToggle}
+    />
+  )
+
+  const support = (
+    <SupportPanel
+      isOpen={supportOpen}
+      onClose={() => setSupportOpen(false)}
+      isAdmin={user.role === 'admin'}
+    />
+  )
+
+  // ── Side panel mode ────────────────────────────────────────────────────────
+  if (panelMode) {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0, right: 0, bottom: 0,
+        width: PANEL_MODE_WIDTH,
+        zIndex: 9000,
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'var(--bg-surface)',
+        boxShadow: '-4px 0 24px rgba(0,0,0,0.18)',
+        borderLeft: '1px solid var(--border)',
+        overflow: 'hidden',
+      }}>
+        {header}
+        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {children}
+        </main>
+        {support}
+      </div>
+    )
+  }
+
+  // ── Full layout ────────────────────────────────────────────────────────────
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: 'var(--bg-page)' }}>
-      <AppHeader onAdminOpen={onAdminOpen} username={user.display_name || user.username} />
+      {header}
 
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* Left sidebar */}
@@ -70,101 +133,98 @@ export default function AppLayout({
           activeId={activeConversationId}
           onSelect={onSelectConversation}
           onNew={onNewConversation}
+          onSetContext={onSetContext}
+          hasContext={hasContext}
+          onRename={onRenameConversation}
         />
 
-        {/* Main chat area */}
-        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-surface)' }}>
-          {children}
-        </main>
+        {/* Main column: chat area + bottom inspector */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-        {/* Right inspector panel — resizable from left edge */}
-        {inspectorOpen && (
-          <aside
-            style={{
-              width: panelWidth,
-              flexShrink: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-              borderLeft: '1px solid var(--border)',
-              background: 'var(--bg-surface)',
-              position: 'relative',
-            }}
-          >
-            {/* Drag handle — left edge */}
-            <div
-              onMouseDown={startResize}
-              title="Drag to resize"
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: 5,
-                cursor: 'ew-resize',
-                zIndex: 10,
-                background: 'transparent',
-                transition: 'background 0.15s',
-              }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'var(--brand)')}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
-            />
+          {/* Chat area */}
+          <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-surface)' }}>
+            {children}
+          </main>
 
-            {/* Inspector header */}
+          {/* Bottom inspector panel — open */}
+          {inspectorOpen && (
             <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '8px 12px 8px 14px',
+                height: panelHeight,
                 flexShrink: 0,
-                borderBottom: '1px solid var(--border)',
-                background: 'var(--bg-page)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                borderTop: '2px solid var(--border)',
+                background: 'var(--bg-surface)',
+                position: 'relative',
               }}
             >
-              <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--brand)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                🔌 MCP Inspector
-              </span>
-              <button
-                onClick={onInspectorToggle}
-                style={{ fontSize: 12, color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px 4px' }}
-              >
-                ✕
-              </button>
-            </div>
+              {/* Top-edge resize handle */}
+              <div
+                onMouseDown={startResize}
+                title="Drag to resize"
+                style={{
+                  position: 'absolute', top: 0, left: 0, right: 0, height: 5,
+                  cursor: 'ns-resize', zIndex: 10, background: 'transparent', transition: 'background 0.15s',
+                }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'var(--brand)')}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
+              />
 
-            <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              {inspector}
-            </div>
-          </aside>
-        )}
+              {/* Inspector header bar */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '6px 12px 6px 14px', flexShrink: 0,
+                borderBottom: '1px solid var(--border)', background: 'var(--bg-page)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--brand)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    🔌 MCP Inspector
+                  </span>
+                </div>
+                <button
+                  onClick={onInspectorToggle}
+                  style={{ fontSize: 12, color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px 6px' }}
+                  title="Close MCP Inspector"
+                >
+                  ✕
+                </button>
+              </div>
 
-        {/* Inspector toggle tab (when closed) */}
-        {!inspectorOpen && (
-          <button
-            onClick={onInspectorToggle}
-            title="Show MCP Inspector"
-            style={{
-              flexShrink: 0,
-              width: 22,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'var(--bg-surface)',
-              borderLeft: '1px solid var(--border)',
-              color: 'var(--text-muted)',
-              fontSize: 'var(--text-xs)',
-              fontWeight: 500,
-              writingMode: 'vertical-rl',
-              letterSpacing: '0.05em',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            🔌 MCP
-          </button>
-        )}
+              <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                {inspector}
+              </div>
+            </div>
+          )}
+
+          {/* Inspector toggle tab (when closed) — horizontal bar at bottom */}
+          {!inspectorOpen && (
+            <button
+              onClick={onInspectorToggle}
+              title="Show MCP Inspector"
+              style={{
+                flexShrink: 0,
+                height: 24,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                background: 'var(--bg-page)',
+                borderTop: '1px solid var(--border)',
+                color: 'var(--text-muted)',
+                fontSize: 'var(--text-xs)',
+                fontWeight: 600,
+                letterSpacing: '0.05em',
+                cursor: 'pointer',
+              }}
+            >
+              🔌 MCP Inspector
+            </button>
+          )}
+        </div>
       </div>
+      {support}
     </div>
   )
 }

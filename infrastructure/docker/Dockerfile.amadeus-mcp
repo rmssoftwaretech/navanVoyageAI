@@ -2,12 +2,16 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir fastapi uvicorn httpx amadeus certifi
+COPY amadeus-mcp/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY amadeus-mcp/ ./amadeus-mcp/
+COPY amadeus-mcp/server.py ./server.py
 
 ENV PYTHONPATH=/app
 
-COPY amadeus-mcp/server.py ./server.py
+EXPOSE 8101
 
-CMD ["python", "-m", "uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8101"]
+# Default: HTTP transport (MCP at /mcp, health at /health)
+# Pass --stdio to switch to stdio transport
+CMD ["python", "server.py"]

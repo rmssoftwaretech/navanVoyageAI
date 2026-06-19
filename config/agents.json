@@ -1,6 +1,35 @@
 {
+  "mcp_servers": {
+    "travel": {
+      "id": "travel",
+      "label": "Amadeus Travel MCP",
+      "url": "http://amadeus-mcp:8101/mcp",
+      "health_url": "http://amadeus-mcp:8101/health",
+      "tools_url": "http://amadeus-mcp:8101/tools",
+      "transport": "streamable-http",
+      "description": "Flight search \u2014 36k pre-generated records across 64 routes"
+    },
+    "car_rental": {
+      "id": "car_rental",
+      "label": "Car Rental MCP",
+      "url": "http://car-rental-mcp:8102/mcp",
+      "health_url": "http://car-rental-mcp:8102/health",
+      "tools_url": "http://car-rental-mcp:8102/tools",
+      "transport": "streamable-http",
+      "description": "Car rental search and booking \u2014 6 agencies \u00d7 6 classes \u00d7 20 cities"
+    },
+    "hotel_booking": {
+      "id": "hotel_booking",
+      "label": "Hotel Booking MCP",
+      "url": "http://hotel-booking-mcp:8103/mcp",
+      "health_url": "http://hotel-booking-mcp:8103/health",
+      "tools_url": "http://hotel-booking-mcp:8103/tools",
+      "transport": "streamable-http",
+      "description": "Hotel search and booking \u2014 12 brands \u00d7 4 tiers \u00d7 20 cities"
+    }
+  },
   "orchestrator": {
-    "model": "azure-openai",
+    "model": "gpt-4o",
     "deployment": "gpt-4o",
     "temperature": 0.3,
     "max_tokens": 2048,
@@ -10,43 +39,97 @@
       "window_turns": 5,
       "max_chars": 2000
     },
-    "tot_enabled": false
+    "tot_enabled": true,
+    "mcp_servers": [
+      "travel"
+    ],
+    "mcp_tools": [
+      "search_flights",
+      "search_hotels",
+      "search_cars"
+    ],
+    "mcp_access": "supervisor",
+    "mcp_role": "Plans the multi-agent workflow and delegates MCP calls to specialist agents"
   },
   "search": {
-    "model": "azure-openai",
-    "deployment": "gpt-4o",
+    "model": "gpt-5.4",
+    "deployment": "gpt-5.4",
     "temperature": 0.1,
     "max_tokens": 1024,
-    "streaming": false
+    "streaming": false,
+    "mcp_servers": [
+      "travel",
+      "car_rental",
+      "hotel_booking"
+    ],
+    "mcp_tools": [
+      "search_flights",
+      "search_hotels",
+      "search_cars"
+    ],
+    "mcp_access": "caller",
+    "mcp_role": "Active MCP caller \u2014 flights via Amadeus MCP, hotels via Hotel Booking MCP, cars via Car Rental MCP"
   },
   "policy": {
     "model": "azure-openai",
     "deployment": "gpt-4o",
-    "temperature": 0.0,
+    "temperature": 0,
     "max_tokens": 512,
-    "streaming": false
+    "streaming": false,
+    "mcp_servers": [
+      "travel"
+    ],
+    "mcp_tools": [
+      "search_flights",
+      "search_hotels",
+      "search_cars"
+    ],
+    "mcp_access": "reader",
+    "mcp_role": "Reads search results from orchestrator context to verify corporate travel policy"
   },
   "destination": {
-    "model": "azure-openai",
-    "deployment": "gpt-4o",
+    "model": "gpt-5.4",
+    "deployment": "gpt-5.4",
     "temperature": 0.5,
     "max_tokens": 1024,
-    "streaming": false
+    "streaming": false,
+    "mcp_servers": [
+      "travel"
+    ],
+    "mcp_tools": [
+      "search_hotels"
+    ],
+    "mcp_access": "reader",
+    "mcp_role": "Enriches hotel context with destination travel briefings and local insights"
   },
   "booking": {
-    "model": "azure-openai",
-    "deployment": "gpt-4o",
+    "model": "gpt-5.4",
+    "deployment": "gpt-5.4",
     "temperature": 0.1,
     "max_tokens": 512,
-    "streaming": false
+    "streaming": false,
+    "mcp_servers": [
+      "travel"
+    ],
+    "mcp_tools": [
+      "search_flights",
+      "search_hotels",
+      "search_cars"
+    ],
+    "mcp_access": "caller",
+    "mcp_role": "Confirms reservations using MCP search results and generates booking references"
   },
   "judge": {
     "model": "azure-openai",
     "deployment": "gpt-4o",
-    "temperature": 0.0,
+    "temperature": 0,
     "max_tokens": 1024,
     "streaming": false,
     "use_claude_opus": false,
-    "eval_threshold": 0.75
+    "eval_threshold": 0.75,
+    "mcp_servers": [],
+    "mcp_tools": [],
+    "mcp_access": "none",
+    "mcp_role": "Evaluates response quality across 5 criteria \u2014 no direct MCP access"
   }
 }

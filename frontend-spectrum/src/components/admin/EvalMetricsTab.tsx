@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ProgressCircle } from '@react-spectrum/s2'
+import { ProgressCircle, TableView, TableHeader, Column, TableBody, Row, Cell } from '@react-spectrum/s2'
 import { getEvalScores } from '@/services/admin'
 import type { EvalScore } from '@/services/admin'
 
@@ -83,56 +83,50 @@ export default function EvalMetricsTab() {
 
       {/* Recent scores */}
       <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: '#475569' }}>Recent Evaluations</h4>
-      <div style={{ overflowX: 'auto' }}>
-        <table style={tbl}>
-          <thead>
-            <tr style={{ background: '#f8fafc' }}>
-              <th style={th}>Time</th>
-              <th style={th}>Score</th>
-              <th style={th}>Pass</th>
-              <th style={th}>Model</th>
-              <th style={th}>Reasoning</th>
-            </tr>
-          </thead>
-          <tbody>
-            {scores.slice(0, 50).map((e) => {
-              const isOpen = expanded === e.eval_id
-              return (
-                <>
-                  <tr
-                    key={e.eval_id}
-                    onClick={() => setExpanded(isOpen ? null : e.eval_id)}
-                    style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', background: isOpen ? '#f0f7ff' : undefined }}
-                  >
-                    <td style={td}>{fmt(e.timestamp)}</td>
-                    <td style={td}><span style={{ fontWeight: 700, color: scoreColor(e.total_score) }}>{(e.total_score * 100).toFixed(0)}%</span></td>
-                    <td style={td}><span style={{ fontWeight: 700, color: e.passed ? '#16a34a' : '#dc2626' }}>{e.passed ? '✓' : '✕'}</span></td>
-                    <td style={{ ...td, fontSize: 11, color: '#94a3b8' }}>{e.model}</td>
-                    <td style={{ ...td, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12, color: '#64748b' }}>
-                      {e.reasoning}
-                    </td>
-                  </tr>
-                  {isOpen && (
-                    <tr key={`${e.eval_id}-d`} style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                      <td colSpan={5} style={{ padding: '10px 14px' }}>
-                        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                          {CRITERIA.map((c) => (
-                            <span key={c} style={{ fontSize: 12 }}>
-                              <span style={{ color: '#64748b' }}>{CRITERION_LABELS[c]}: </span>
-                              <span style={{ fontWeight: 700, color: scoreColor(e.scores[c] ?? 0) }}>{((e.scores[c] ?? 0) * 100).toFixed(0)}%</span>
-                            </span>
-                          ))}
-                        </div>
-                        {e.reasoning && <p style={{ margin: '8px 0 0', fontSize: 12, color: '#475569', lineHeight: 1.5 }}>{e.reasoning}</p>}
-                      </td>
-                    </tr>
-                  )}
-                </>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
+      <TableView
+        aria-label="Eval scores"
+        density="compact"
+        onAction={(key) => setExpanded(expanded === String(key) ? null : String(key))}
+        UNSAFE_style={{ width: '100%' }}
+      >
+        <TableHeader>
+          <Column isRowHeader>Time</Column>
+          <Column>Score</Column>
+          <Column>Pass</Column>
+          <Column>Model</Column>
+          <Column>Reasoning</Column>
+        </TableHeader>
+        <TableBody items={scores.slice(0, 50)}>
+          {(e) => (
+            <Row id={e.eval_id}>
+              <Cell>{fmt(e.timestamp)}</Cell>
+              <Cell><span style={{ fontWeight: 700, color: scoreColor(e.total_score) }}>{(e.total_score * 100).toFixed(0)}%</span></Cell>
+              <Cell><span style={{ fontWeight: 700, color: e.passed ? '#16a34a' : '#dc2626' }}>{e.passed ? '✓' : '✕'}</span></Cell>
+              <Cell>{e.model}</Cell>
+              <Cell>{e.reasoning}</Cell>
+            </Row>
+          )}
+        </TableBody>
+      </TableView>
+
+      {/* Expanded criteria detail */}
+      {expanded && (() => {
+        const e = scores.find((s) => s.eval_id === expanded)
+        if (!e) return null
+        return (
+          <div style={{ marginTop: 10, padding: '10px 14px', background: '#f0f7ff', border: '1px solid #bfdbfe', borderRadius: 6 }}>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: e.reasoning ? 8 : 0 }}>
+              {CRITERIA.map((c) => (
+                <span key={c} style={{ fontSize: 12 }}>
+                  <span style={{ color: '#64748b' }}>{CRITERION_LABELS[c]}: </span>
+                  <span style={{ fontWeight: 700, color: scoreColor(e.scores[c] ?? 0) }}>{((e.scores[c] ?? 0) * 100).toFixed(0)}%</span>
+                </span>
+              ))}
+            </div>
+            {e.reasoning && <p style={{ margin: 0, fontSize: 12, color: '#475569', lineHeight: 1.5 }}>{e.reasoning}</p>}
+          </div>
+        )
+      })()}
     </div>
   )
 }
@@ -140,6 +134,3 @@ export default function EvalMetricsTab() {
 const center: React.CSSProperties = { display: 'flex', justifyContent: 'center', padding: 40 }
 const heading: React.CSSProperties = { margin: '0 0 20px', fontSize: 15, fontWeight: 700, color: '#1E3A5F' }
 const kpiCard: React.CSSProperties = { background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '14px 16px' }
-const tbl: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 13 }
-const th: React.CSSProperties = { padding: '7px 12px', textAlign: 'left', fontWeight: 600, color: '#475569', borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap' }
-const td: React.CSSProperties = { padding: '7px 12px', color: '#334155', verticalAlign: 'middle' }

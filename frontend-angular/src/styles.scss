@@ -3,12 +3,12 @@
 $nva-theme: mat.define-theme((
   color: (
     theme-type: light,
-    primary: mat.$azure-palette,
+    primary: mat.$violet-palette,
     tertiary: mat.$orange-palette,
   ),
   typography: (
-    brand-family: 'IBM Plex Sans',
-    plain-family: 'IBM Plex Sans',
+    brand-family: 'Inter',
+    plain-family: 'Inter',
   ),
   density: (
     scale: 0,
@@ -19,15 +19,17 @@ $nva-theme: mat.define-theme((
   @include mat.all-component-themes($nva-theme);
   @include mat.color-variants-backwards-compatibility($nva-theme);
 
-  --nva-navy:        #1E3A5F;
-  --nva-navy-dark:   #162d49;
-  --nva-gold:        #D97706;
-  --nva-gold-light:  rgba(217, 119, 6, 0.12);
-  --nva-surface:     #F8FAFC;
-  --nva-surface-2:   #F1F5F9;
-  --nva-border:      #E2E8F0;
-  --nva-text:        #0F172A;
-  --nva-muted:       #64748B;
+  // Brand tokens — violet/M3 palette
+  --nva-purple:       #6750A4;   // M3 baseline violet primary
+  --nva-purple-dark:  #4F378B;
+  --nva-purple-light: rgba(103, 80, 164, 0.10);
+  --nva-gold:         #D97706;
+  --nva-gold-light:   rgba(217, 119, 6, 0.12);
+  --nva-surface:      #FFFBFE;   // M3 surface
+  --nva-surface-2:    #F4EFF4;   // M3 surface-variant
+  --nva-border:       #E6E0E9;   // M3 outline-variant
+  --nva-text:         #1C1B1F;   // M3 on-surface
+  --nva-muted:        #49454F;   // M3 on-surface-variant
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -36,7 +38,7 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   background: var(--nva-surface);
   color: var(--nva-text);
   -webkit-font-smoothing: antialiased;
@@ -54,10 +56,10 @@ html, body {
 // ── Toolbar ────────────────────────────────────────────────────────────────────
 
 .nva-toolbar {
-  background: var(--nva-navy) !important;
+  background: var(--nva-purple) !important;
   color: #fff !important;
   flex-shrink: 0;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
   z-index: 10;
   gap: 8px;
 
@@ -69,9 +71,7 @@ html, body {
     font-size: 16px;
     letter-spacing: 0.01em;
 
-    .nva-brand-icon {
-      font-size: 22px;
-    }
+    .nva-brand-icon { font-size: 22px; }
 
     .nva-brand-tag {
       font-size: 10px;
@@ -94,23 +94,22 @@ html, body {
     margin-right: 4px;
   }
 
+  // M3 state-layer tokens — force white hover on purple toolbar
+  --mat-icon-button-hover-state-layer-color:    #ffffff;
+  --mat-icon-button-hover-state-layer-opacity:  0.14;
+  --mat-stroked-button-hover-state-layer-color:   #ffffff;
+  --mat-stroked-button-hover-state-layer-opacity: 0.14;
+
   button[mat-icon-button] {
     color: rgba(255,255,255,0.85) !important;
-
-    &:hover {
-      color: #fff !important;
-      background: rgba(255,255,255,0.1) !important;
-    }
+    &:hover { color: #fff !important; }
   }
 
   button[mat-stroked-button] {
     color: rgba(255,255,255,0.9) !important;
     border-color: rgba(255,255,255,0.35) !important;
     font-size: 12px;
-
-    &:hover {
-      background: rgba(255,255,255,0.08) !important;
-    }
+    &:hover { border-color: rgba(255,255,255,0.7) !important; }
   }
 }
 
@@ -124,7 +123,7 @@ mat-sidenav-container {
 mat-sidenav.nva-sidenav {
   width: 260px;
   border-right: 1px solid var(--nva-border) !important;
-  background: #fff;
+  background: var(--nva-surface-2);
   display: flex;
   flex-direction: column;
 }
@@ -143,16 +142,15 @@ mat-sidenav-content.nva-content {
 
   button[mat-flat-button] {
     width: 100%;
-    background: var(--nva-navy) !important;
+    background: var(--nva-purple) !important;
     color: #fff !important;
-    border-radius: 10px;
+    border-radius: 20px;
     font-size: 13px;
     font-weight: 600;
     height: 40px;
 
     .mat-icon { font-size: 18px; height: 18px; width: 18px; }
-
-    &:hover { background: var(--nva-navy-dark) !important; }
+    &:hover { background: var(--nva-purple-dark) !important; }
   }
 }
 
@@ -174,21 +172,19 @@ mat-nav-list.nva-conv-list {
 }
 
 .nva-conv-item {
-  border-radius: 10px !important;
+  border-radius: 28px !important;   // M3 full-pill nav items
   margin-bottom: 2px;
-  padding: 0 8px !important;
+  padding: 0 16px !important;
   height: auto !important;
   min-height: 56px !important;
 
   &.active {
-    background: var(--nva-gold-light) !important;
-    border-left: 3px solid var(--nva-gold);
-
-    .nva-conv-title { color: var(--nva-navy); font-weight: 600; }
+    background: var(--nva-purple-light) !important;
+    .nva-conv-title { color: var(--nva-purple); font-weight: 600; }
   }
 
   &:not(.active):hover {
-    background: var(--nva-surface) !important;
+    background: rgba(103,80,164,0.06) !important;
   }
 
   .nva-conv-title {
@@ -246,23 +242,21 @@ mat-nav-list.nva-conv-list {
 
   &.user {
     align-items: flex-end;
-
     .nva-bubble {
-      background: var(--nva-navy);
+      background: var(--nva-purple);
       color: #fff;
-      border-radius: 18px 18px 4px 18px;
+      border-radius: 20px 20px 4px 20px;
     }
   }
 
   &.assistant {
     align-items: flex-start;
-
     .nva-bubble {
-      background: #fff;
+      background: var(--nva-surface-2);
       color: var(--nva-text);
       border: 1px solid var(--nva-border);
-      border-radius: 18px 18px 18px 4px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      border-radius: 20px 20px 20px 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
   }
 }
@@ -314,7 +308,7 @@ mat-nav-list.nva-conv-list {
   display: inline-block;
   width: 8px;
   height: 14px;
-  background: var(--nva-navy);
+  background: var(--nva-purple);
   margin-left: 2px;
   border-radius: 2px;
   animation: blink 1s steps(2) infinite;
@@ -338,7 +332,7 @@ mat-chip.nva-chip {
   font-size: 11px !important;
   font-weight: 600 !important;
   padding: 0 10px !important;
-  border-radius: 6px !important;
+  border-radius: 8px !important;
 }
 
 // ── Chat input ────────────────────────────────────────────────────────────────
@@ -351,19 +345,17 @@ mat-chip.nva-chip {
   gap: 8px;
   align-items: flex-end;
 
-  mat-form-field {
-    flex: 1;
-  }
+  mat-form-field { flex: 1; }
 
   button[mat-flat-button] {
-    background: var(--nva-navy) !important;
+    background: var(--nva-purple) !important;
     color: #fff !important;
     margin-bottom: 22px;
-    border-radius: 10px;
+    border-radius: 20px;
     min-width: 80px;
 
     &:disabled { opacity: 0.45; }
-    &:not(:disabled):hover { background: var(--nva-navy-dark) !important; }
+    &:not(:disabled):hover { background: var(--nva-purple-dark) !important; }
   }
 }
 
@@ -388,7 +380,7 @@ mat-chip.nva-chip {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
-    color: var(--nva-navy);
+    color: var(--nva-purple);
   }
 
   p {
@@ -400,9 +392,9 @@ mat-chip.nva-chip {
   }
 
   button[mat-flat-button] {
-    background: var(--nva-navy) !important;
+    background: var(--nva-purple) !important;
     color: #fff !important;
-    border-radius: 10px;
+    border-radius: 20px;
     padding: 0 24px;
     height: 42px;
   }
@@ -415,16 +407,17 @@ mat-chip.nva-chip {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #EFF4FB 0%, #E8F0F9 50%, #EEF2F8 100%);
+  background: linear-gradient(135deg, #F3EFFE 0%, #EDE7F6 50%, #F5EFFE 100%);
   padding: 24px;
 }
 
 mat-card.nva-login-card {
   width: 100%;
   max-width: 420px;
-  border-radius: 20px !important;
-  box-shadow: 0 4px 32px rgba(30,58,95,0.10), 0 1px 6px rgba(30,58,95,0.06) !important;
-  border: 1px solid rgba(30,58,95,0.06);
+  border-radius: 28px !important;
+  box-shadow: 0 4px 32px rgba(103,80,164,0.12), 0 1px 6px rgba(103,80,164,0.08) !important;
+  border: 1px solid rgba(103,80,164,0.08);
+  background: var(--nva-surface) !important;
 }
 
 .nva-login-brand {
@@ -434,21 +427,21 @@ mat-card.nva-login-card {
   .nva-login-logo {
     width: 56px;
     height: 56px;
-    background: var(--nva-navy);
+    background: var(--nva-purple);
     border-radius: 16px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 16px;
     font-size: 28px;
-    box-shadow: 0 4px 16px rgba(30,58,95,0.25);
+    box-shadow: 0 4px 16px rgba(103,80,164,0.35);
   }
 
   h1 {
     margin: 0 0 6px;
     font-size: 24px;
     font-weight: 700;
-    color: var(--nva-navy);
+    color: var(--nva-purple);
     letter-spacing: -0.01em;
   }
 
@@ -462,7 +455,7 @@ mat-card.nva-login-card {
 .nva-login-error {
   background: #FEF2F2;
   border: 1px solid #FECACA;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 12px 16px;
   margin-bottom: 20px;
   color: #991B1B;
@@ -474,15 +467,15 @@ mat-card.nva-login-card {
 
 .nva-login-submit {
   width: 100%;
-  background: var(--nva-navy) !important;
+  background: var(--nva-purple) !important;
   color: #fff !important;
   height: 48px !important;
   font-size: 15px !important;
   font-weight: 600 !important;
-  border-radius: 12px !important;
+  border-radius: 24px !important;
   margin-top: 4px;
 
-  &:not(:disabled):hover { background: var(--nva-navy-dark) !important; }
+  &:not(:disabled):hover { background: var(--nva-purple-dark) !important; }
   &:disabled { opacity: 0.6; }
 }
 
@@ -506,7 +499,7 @@ mat-card.nva-login-card {
 .nva-inspector-panel {
   width: 240px;
   border-left: 1px solid var(--nva-border);
-  background: #fff;
+  background: var(--nva-surface-2);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -516,7 +509,7 @@ mat-card.nva-login-card {
     border-bottom: 1px solid var(--nva-border);
     font-size: 11px;
     font-weight: 700;
-    color: var(--nva-navy);
+    color: var(--nva-purple);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     display: flex;
@@ -544,12 +537,12 @@ mat-card.nva-login-card {
   margin-bottom: 6px;
   background: var(--nva-surface);
   border: 1px solid var(--nva-border);
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 11px;
 
   .nva-tool-agent {
     font-weight: 700;
-    color: var(--nva-navy);
+    color: var(--nva-purple);
     margin-bottom: 2px;
     text-transform: capitalize;
   }
@@ -560,19 +553,49 @@ mat-card.nva-login-card {
   }
 }
 
-// ── Admin dialog overrides ────────────────────────────────────────────────────
+// ── CDK overlay backdrop ──────────────────────────────────────────────────────
 
-.mat-mdc-dialog-container {
-  --mdc-dialog-container-shape: 16px;
+.cdk-overlay-dark-backdrop {
+  background: rgba(0, 0, 0, 0.52);
 }
 
+// ── Admin dialog — centered fixed overlay ─────────────────────────────────────
+// Angular Material writes inline position styles via GlobalPositionStrategy.
+// !important overrides inline styles, so we use fixed centering on the panelClass.
+
 .nva-admin-dialog {
-  h2[mat-dialog-title] {
-    color: var(--nva-navy);
-    font-size: 18px;
-    font-weight: 700;
-    padding: 20px 24px 0;
-  }
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  // width/maxWidth come from dialog.open() config
+  max-height: 80vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.mat-mdc-dialog-container {
+  --mdc-dialog-container-shape: 20px;
+  --mdc-dialog-container-color: #ffffff;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.nva-admin-dialog .mat-mdc-dialog-surface {
+  background: #ffffff !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  box-shadow: 0 8px 40px rgba(103, 80, 164, 0.20), 0 2px 8px rgba(0,0,0,0.10) !important;
+}
+
+// Let mat-dialog-content scroll inside the fixed-height surface
+.nva-admin-dialog .mat-mdc-dialog-content {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  max-height: none !important;
+  padding: 0 !important;
 }
 
 // ── Responsive mat-form-field tweaks ─────────────────────────────────────────
@@ -587,4 +610,16 @@ mat-form-field[subscriptSizing="dynamic"] {
   .mat-mdc-form-field-subscript-wrapper {
     display: block;
   }
+}
+
+// ── Snackbar variants ─────────────────────────────────────────────────────────
+
+.nva-snack-success .mdc-snackbar__surface {
+  background: #065F46 !important;
+  color: #fff !important;
+}
+
+.nva-snack-error .mdc-snackbar__surface {
+  background: #991B1B !important;
+  color: #fff !important;
 }

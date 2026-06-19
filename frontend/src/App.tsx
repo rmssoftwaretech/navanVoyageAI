@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import LoginPage from '@/pages/LoginPage'
 import ChatPage from '@/pages/ChatPage'
+import InspectorPage from '@/pages/InspectorPage'
 import { isAuthenticated } from '@/services/auth'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -11,6 +12,14 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/inspector"
+        element={
+          <PrivateRoute>
+            <InspectorPage />
+          </PrivateRoute>
+        }
+      />
       <Route
         path="/*"
         element={

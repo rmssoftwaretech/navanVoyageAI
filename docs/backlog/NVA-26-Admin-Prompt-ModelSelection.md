@@ -2,7 +2,7 @@
 
 **Epic:** EPIC-NVA
 **Points:** 5
-**Status:** ⬜ Backlog
+**Status:** ✅ Done
 **Sprint:** Sprint NVA-F
 
 ---

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ProgressCircle } from '@react-spectrum/s2'
+import { ProgressCircle, TableView, TableHeader, Column, TableBody, Row, Cell } from '@react-spectrum/s2'
 import { getBilling } from '@/services/admin'
 import type { BillingEntry } from '@/services/admin'
 
@@ -80,20 +80,24 @@ export default function BillingTab() {
           {/* Pricing reference */}
           <details style={{ marginTop: 24 }}>
             <summary style={{ fontSize: 12, color: '#64748b', cursor: 'pointer', fontWeight: 600 }}>List pricing reference (per 1M tokens)</summary>
-            <table style={{ ...tbl, marginTop: 10 }}>
-              <thead><tr style={{ background: '#f8fafc' }}>
-                <th style={th}>Model</th><th style={th}>Input</th><th style={th}>Output</th>
-              </tr></thead>
-              <tbody>
-                {Object.entries(MODEL_COSTS).map(([m, c]) => (
-                  <tr key={m} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={td}>{m}</td>
-                    <td style={td}>${c.input}</td>
-                    <td style={td}>${c.output}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div style={{ marginTop: 10 }}>
+              <TableView aria-label="Model pricing" density="compact" UNSAFE_style={{ width: '100%' }}>
+                <TableHeader>
+                  <Column isRowHeader>Model</Column>
+                  <Column>Input / 1M</Column>
+                  <Column>Output / 1M</Column>
+                </TableHeader>
+                <TableBody items={Object.entries(MODEL_COSTS).map(([model, c]) => ({ model, ...c }))}>
+                  {(item) => (
+                    <Row id={item.model}>
+                      <Cell>{item.model}</Cell>
+                      <Cell>${item.input}</Cell>
+                      <Cell>${item.output}</Cell>
+                    </Row>
+                  )}
+                </TableBody>
+              </TableView>
+            </div>
           </details>
         </>
       )}
@@ -104,6 +108,3 @@ export default function BillingTab() {
 const center: React.CSSProperties = { display: 'flex', justifyContent: 'center', padding: 40 }
 const heading: React.CSSProperties = { margin: '0 0 20px', fontSize: 15, fontWeight: 700, color: '#1E3A5F' }
 const kpiCard: React.CSSProperties = { background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '14px 16px' }
-const tbl: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 13 }
-const th: React.CSSProperties = { padding: '7px 12px', textAlign: 'left', fontWeight: 600, color: '#475569', borderBottom: '1px solid #e2e8f0' }
-const td: React.CSSProperties = { padding: '6px 12px', color: '#334155' }

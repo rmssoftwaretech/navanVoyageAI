@@ -1,0 +1,14 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY hotel-booking-mcp/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY hotel-booking-mcp/server.py ./server.py
+
+ENV PYTHONPATH=/app
+
+EXPOSE 8103
+
+CMD ["python", "server.py"]

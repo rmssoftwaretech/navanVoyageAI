@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getAuditLog } from '@/services/admin'
+import { usePolling } from '@/hooks/usePolling'
+import { downloadCsv } from '@/utils/export'
 
 interface AuditEntry {
   log_id: string
@@ -47,13 +49,26 @@ export default function AuditLogTab() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [filter, setFilter] = useState('')
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [secAgo, setSecAgo] = useState(0)
 
-  useEffect(() => {
+  function fetchData() {
     getAuditLog(100)
-      .then((data) => setEntries(data as AuditEntry[]))
+      .then((data) => { setEntries(data as AuditEntry[]); setLastUpdated(new Date()) })
       .catch(() => setError('Failed to load audit log.'))
       .finally(() => setLoading(false))
-  }, [])
+  }
+
+  useEffect(() => { fetchData() }, [])
+  usePolling(fetchData, 10_000)
+
+  // Tick the "X seconds ago" counter every second
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (lastUpdated) setSecAgo(Math.floor((Date.now() - lastUpdated.getTime()) / 1000))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [lastUpdated])
 
   const filtered = useMemo(() => {
     if (!filter.trim()) return entries
@@ -63,14 +78,18 @@ export default function AuditLogTab() {
     )
   }, [entries, filter])
 
-  function handleExport() {
-    const blob = new Blob([JSON.stringify(filtered, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `nva-audit-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+  function handleExportCsv() {
+    const rows = filtered.map((e) => ({
+      timestamp: cellValue(e, 'timestamp'),
+      user: e.user,
+      agent: e.agent,
+      action: e.action,
+      model: e.model,
+      latency: cellValue(e, 'latency_ms'),
+      input: e.input_summary,
+      output: e.output_summary,
+    }))
+    downloadCsv(`nva-audit-${new Date().toISOString().slice(0, 10)}.csv`, rows)
   }
 
   if (loading) {
@@ -103,18 +122,20 @@ export default function AuditLogTab() {
         />
         <span className="text-xs" style={{ color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
           {filtered.length} / {entries.length} entries
+          {lastUpdated && <span style={{ marginLeft: 8, opacity: 0.6 }}>· updated {secAgo}s ago</span>}
         </span>
         <button
-          onClick={handleExport}
+          onClick={handleExportCsv}
           disabled={filtered.length === 0}
           className="px-3 py-1.5 text-xs font-semibold disabled:opacity-40"
           style={{
-            border: '1px solid var(--navy)',
-            color: 'var(--navy)',
+            border: '1px solid var(--brand)',
+            color: 'var(--brand)',
             background: 'transparent',
+            cursor: filtered.length === 0 ? 'not-allowed' : 'pointer',
           }}
         >
-          ↓ Export JSON
+          ↓ Export CSV
         </button>
       </div>
 

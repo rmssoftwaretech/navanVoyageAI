@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { Conversation } from '@/types/nva'
 
 /* ── Date grouping ───────────────────────────────────────────────────── */
@@ -49,6 +49,9 @@ interface ConversationSidebarProps {
   activeId: string | null
   onSelect: (id: string) => void
   onNew: () => void
+  onSetContext?: () => void
+  hasContext?: boolean
+  onRename?: (id: string, title: string) => void
 }
 
 export default function ConversationSidebar({
@@ -56,16 +59,37 @@ export default function ConversationSidebar({
   activeId,
   onSelect,
   onNew,
+  onSetContext,
+  hasContext = false,
+  onRename,
 }: ConversationSidebarProps) {
   const [search, setSearch] = useState('')
+  const [starredOnly, setStarredOnly] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingTitle, setEditingTitle] = useState('')
+  const editInputRef = useRef<HTMLInputElement>(null)
+
+  function startEdit(id: string, currentTitle: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    setEditingId(id)
+    setEditingTitle(currentTitle)
+    setTimeout(() => editInputRef.current?.select(), 0)
+  }
+
+  function commitEdit() {
+    if (editingId && editingTitle.trim()) {
+      onRename?.(editingId, editingTitle.trim())
+    }
+    setEditingId(null)
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return conversations
-    return conversations.filter((c) =>
-      (c.title || 'New conversation').toLowerCase().includes(q)
-    )
-  }, [conversations, search])
+    let list = conversations
+    if (starredOnly) list = list.filter((c) => c.has_starred)
+    if (!q) return list
+    return list.filter((c) => (c.title || 'New conversation').toLowerCase().includes(q))
+  }, [conversations, search, starredOnly])
 
   const grouped = useMemo(() => {
     const map: Record<string, Conversation[]> = {}
@@ -145,8 +169,30 @@ export default function ConversationSidebar({
         </div>
       </div>
 
+      {/* Starred filter */}
+      <div style={{ padding: '0 10px 8px', flexShrink: 0 }}>
+        <button
+          onClick={() => setStarredOnly((v) => !v)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            padding: '4px 10px', width: '100%',
+            fontSize: 'var(--text-xs)', fontWeight: 500,
+            color: starredOnly ? '#D97706' : 'var(--text-muted)',
+            background: starredOnly ? 'rgba(217,119,6,0.08)' : 'transparent',
+            border: `1px solid ${starredOnly ? 'rgba(217,119,6,0.4)' : 'var(--border)'}`,
+            borderRadius: 'var(--r-md)', cursor: 'pointer', transition: 'all 0.15s',
+          }}
+        >
+          <span>⭐</span>
+          <span>{starredOnly ? 'Starred only' : 'Show starred'}</span>
+          {starredOnly && (
+            <span style={{ marginLeft: 'auto', fontSize: 10 }} onClick={(e) => { e.stopPropagation(); setStarredOnly(false) }}>✕</span>
+          )}
+        </button>
+      </div>
+
       {/* Conversation list */}
-      <nav style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
+      <nav style={{ flex: 1, overflowY: 'auto', paddingBottom: 8, minHeight: 0 }}>
         {grouped.length === 0 && (
           <p style={{ padding: '12px', fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>
             {search ? 'No matching conversations.' : 'No conversations yet.'}
@@ -194,17 +240,40 @@ export default function ConversationSidebar({
                     (e.currentTarget as HTMLElement).style.background = isActive ? 'var(--brand-light)' : 'transparent'
                   }}
                 >
-                  <span style={{
-                    fontSize: 'var(--text-sm)',
-                    fontWeight: isActive ? 600 : 400,
-                    color: 'var(--text-primary)',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    display: 'block',
-                  }}>
-                    {c.title || 'New conversation'}
-                  </span>
+                  {editingId === c.conversation_id ? (
+                    <input
+                      ref={editInputRef}
+                      value={editingTitle}
+                      onChange={(e) => setEditingTitle(e.target.value)}
+                      onBlur={commitEdit}
+                      onKeyDown={(e) => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditingId(null) }}
+                      onClick={(e) => e.stopPropagation()}
+                      autoFocus
+                      style={{
+                        width: '100%', fontSize: 'var(--text-sm)', fontWeight: 600,
+                        color: 'var(--text-primary)', background: 'var(--bg-page)',
+                        border: '1px solid var(--brand)', borderRadius: 'var(--r-sm)',
+                        padding: '1px 6px', outline: 'none',
+                      }}
+                    />
+                  ) : (
+                    <span
+                      onDoubleClick={(e) => startEdit(c.conversation_id, c.title || 'New conversation', e)}
+                      title="Double-click to rename"
+                      style={{
+                        fontSize: 'var(--text-sm)',
+                        fontWeight: isActive ? 600 : 400,
+                        color: 'var(--text-primary)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        display: 'flex', alignItems: 'center', gap: 4,
+                      }}
+                    >
+                      {c.has_starred && <span style={{ fontSize: 10, color: '#D97706', flexShrink: 0 }}>⭐</span>}
+                      {c.title || 'New conversation'}
+                    </span>
+                  )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>
                       {c.turns_count} {c.turns_count === 1 ? 'turn' : 'turns'}
@@ -217,6 +286,36 @@ export default function ConversationSidebar({
           </div>
         ))}
       </nav>
+
+      {/* Set context to panel */}
+      <div style={{ padding: '8px 10px', flexShrink: 0, borderTop: '1px solid var(--border)' }}>
+        <button
+          onClick={onSetContext}
+          title="Set a custom system context prepended to every message"
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            padding: '6px 10px',
+            fontSize: 'var(--text-xs)',
+            fontWeight: 500,
+            color: hasContext ? 'white' : 'var(--brand)',
+            background: hasContext ? 'var(--brand)' : 'var(--brand-light)',
+            border: `1px solid ${hasContext ? 'var(--brand-hover)' : 'var(--brand)'}`,
+            borderRadius: 'var(--r-md)',
+            cursor: 'pointer',
+            transition: 'opacity 0.15s',
+            opacity: onSetContext ? 1 : 0.4,
+          }}
+          disabled={!onSetContext}
+          onMouseEnter={(e) => { if (onSetContext) (e.currentTarget as HTMLElement).style.opacity = '0.75' }}
+          onMouseLeave={(e) => { if (onSetContext) (e.currentTarget as HTMLElement).style.opacity = '1' }}
+        >
+          🔌 {hasContext ? 'Context active ●' : 'Set context to panel'}
+        </button>
+      </div>
     </aside>
   )
 }

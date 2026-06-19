@@ -88,7 +88,7 @@ class ShortTermMemory:
                     {"role": "user", "content": user_prompt},
                 ],
                 temperature=0.0,
-                max_tokens=512,
+                max_completion_tokens=512,
             )
             raw = resp.choices[0].message.content or "{}"
             raw = re.sub(r"```(?:json)?\s*|\s*```", "", raw).strip()
@@ -201,7 +201,7 @@ class MemoryUpdater:
                     {"role": "user", "content": user_prompt},
                 ],
                 temperature=0.0,
-                max_tokens=512,
+                max_completion_tokens=512,
             )
             raw = resp.choices[0].message.content or "[]"
             raw = re.sub(r"```(?:json)?\s*|\s*```", "", raw).strip()

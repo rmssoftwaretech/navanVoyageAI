@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import AttachmentChip from './Chat/AttachmentChip'
 
 const THINK_MODES = [
   { id: 'none', label: '💡 Think', suffix: '' },
@@ -17,14 +18,37 @@ interface InputBarProps {
   onStop?: () => void
   isStreaming: boolean
   disabled?: boolean
+  onAttachmentChange?: (filename: string | null, context: string | null) => void
 }
 
-export default function InputBar({ onSend, onStop, isStreaming, disabled }: InputBarProps) {
+export default function InputBar({ onSend, onStop, isStreaming, disabled, onAttachmentChange }: InputBarProps) {
   const [value, setValue] = useState('')
   const [thinkMode, setThinkMode] = useState('none')
   const [thinkOpen, setThinkOpen] = useState(false)
+  const [attachment, setAttachment] = useState<{ filename: string; context: string } | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const thinkRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 4 * 1024 * 1024) { alert('File too large (max 4 MB)'); return }
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string
+      const ctx = `[Attached file: ${file.name}]\n${text}`
+      setAttachment({ filename: file.name, context: ctx })
+      onAttachmentChange?.(file.name, ctx)
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
+  function removeAttachment() {
+    setAttachment(null)
+    onAttachmentChange?.(null, null)
+  }
 
   // Close think dropdown on outside click
   useEffect(() => {
@@ -76,6 +100,22 @@ export default function InputBar({ onSend, onStop, isStreaming, disabled }: Inpu
         flexShrink: 0,
       }}
     >
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".txt,.md,.csv,.json"
+        onChange={handleFileChange}
+        style={{ display: 'none' }}
+      />
+
+      {/* Attachment chip */}
+      {attachment && (
+        <div style={{ marginBottom: 8 }}>
+          <AttachmentChip filename={attachment.filename} onRemove={removeAttachment} />
+        </div>
+      )}
+
       <textarea
         ref={textareaRef}
         rows={1}
@@ -193,25 +233,44 @@ export default function InputBar({ onSend, onStop, isStreaming, disabled }: Inpu
             )}
           </div>
 
-          {/* Stop button (streaming only) */}
+          {/* Attach file button */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            title="Attach a file (.txt, .csv, .json, .md — max 4 MB)"
+            disabled={isStreaming}
+            style={{
+              padding: '4px 10px', fontSize: 'var(--text-sm)',
+              color: attachment ? 'var(--brand)' : 'var(--text-muted)',
+              background: attachment ? 'var(--brand-light)' : 'transparent',
+              border: `1px solid ${attachment ? 'var(--brand)' : 'var(--border)'}`,
+              borderRadius: 'var(--r-md)', cursor: isStreaming ? 'not-allowed' : 'pointer',
+              opacity: isStreaming ? 0.4 : 1,
+            }}
+          >
+            📎
+          </button>
+
+          {/* Stop button — blinks while streaming */}
           {isStreaming && (
             <button
               onClick={onStop}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 4,
+                gap: 5,
                 padding: '4px 12px',
                 fontSize: 'var(--text-sm)',
-                fontWeight: 500,
-                border: '1px solid var(--danger)',
+                fontWeight: 600,
+                border: '1.5px solid var(--danger)',
                 borderRadius: 'var(--r-md)',
                 background: 'var(--danger-bg)',
                 color: 'var(--danger)',
                 cursor: 'pointer',
+                animation: 'stopBlink 1.1s ease-in-out infinite',
               }}
             >
-              ⏹ Stop
+              <span style={{ display: 'inline-block', width: 9, height: 9, background: 'var(--danger)', borderRadius: 2 }} />
+              Stop
             </button>
           )}
 

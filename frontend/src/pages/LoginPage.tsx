@@ -94,9 +94,7 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-xs mt-4" style={{ color: 'var(--text-muted)' }}>
-          Demo: traveller / travel123 &nbsp;·&nbsp; admin / admin123
-        </p>
+
       </div>
     </div>
   )

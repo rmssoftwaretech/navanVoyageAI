@@ -25,6 +25,7 @@ def _now() -> str:
 class SendRequest(BaseModel):
     conversation_id: str
     content: str
+    custom_context: str | None = None
 
 
 # ── Conversations ─────────────────────────────────────────────────────────────
@@ -204,7 +205,259 @@ async def send_message(
         )
 
     return StreamingResponse(
-        OrchestratorAgent().stream(body.conversation_id, body.content, user["username"], db),
+        OrchestratorAgent().stream(body.conversation_id, body.content, user["username"], db, custom_context=body.custom_context),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+class BookingPassenger(BaseModel):
+    first_name: str
+    last_name: str
+    dob: str
+    passport_number: str
+    nationality: str | None = None
+    passport_expiry: str | None = None
+    email: str
+
+
+class BookingRequest(BaseModel):
+    flight_id: str
+    flight_number: str | None = None
+    origin: str | None = None
+    destination: str | None = None
+    depart_date: str | None = None
+    cabin_class: str | None = None
+    price_usd: float | None = None
+    passenger: BookingPassenger
+    seat_preference: str = "no_preference"
+    meal_preference: str = "standard"
+    special_assistance: str | None = None
+
+
+class FeedbackRequest(BaseModel):
+    conversation_id: str
+    turn_index: int
+    rating: str          # "up" | "down" | "flag"
+    comment: str | None = None
+
+
+class RenameRequest(BaseModel):
+    title: str
+
+
+class ReactionRequest(BaseModel):
+    emoji: str
+
+
+class StarRequest(BaseModel):
+    starred: bool
+
+
+@router.patch("/conversations/{conversation_id}")
+async def rename_conversation(
+    conversation_id: str,
+    body: RenameRequest,
+    user: dict = Depends(get_current_user),
+) -> dict:
+    db = await get_db()
+    if db is None:
+        raise HTTPException(status_code=503, detail="DB unavailable")
+    result = await db["nva_conversations"].update_one(
+        {"conversation_id": conversation_id, "user": user["username"]},
+        {"$set": {"title": body.title.strip()[:80], "updated_at": _now()}},
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    return {"conversation_id": conversation_id, "title": body.title.strip()[:80]}
+
+
+@router.post("/conversations/{conversation_id}/turns/{turn_idx}/react")
+async def react_to_turn(
+    conversation_id: str,
+    turn_idx: int,
+    body: ReactionRequest,
+    user: dict = Depends(get_current_user),
+) -> dict:
+    db = await get_db()
+    if db is None:
+        raise HTTPException(status_code=503, detail="DB unavailable")
+    field = f"turns.{turn_idx}.reactions.{body.emoji}"
+    await db["nva_conversations"].update_one(
+        {"conversation_id": conversation_id, "user": user["username"]},
+        {"$inc": {field: 1}},
+    )
+    return {"status": "ok", "emoji": body.emoji}
+
+
+@router.patch("/conversations/{conversation_id}/turns/{turn_idx}/star")
+async def star_turn(
+    conversation_id: str,
+    turn_idx: int,
+    body: StarRequest,
+    user: dict = Depends(get_current_user),
+) -> dict:
+    db = await get_db()
+    if db is None:
+        raise HTTPException(status_code=503, detail="DB unavailable")
+    field = f"turns.{turn_idx}.starred"
+    update: dict = {"$set": {field: body.starred, "updated_at": _now()}}
+    if body.starred:
+        update["$set"]["has_starred"] = True
+    await db["nva_conversations"].update_one(
+        {"conversation_id": conversation_id, "user": user["username"]},
+        update,
+    )
+    return {"status": "ok", "starred": body.starred}
+
+
+@router.post("/conversations/{conversation_id}/share")
+async def share_conversation(
+    conversation_id: str,
+    user: dict = Depends(get_current_user),
+) -> dict:
+    db = await get_db()
+    if db is None:
+        raise HTTPException(status_code=503, detail="DB unavailable")
+    doc = await db["nva_conversations"].find_one(
+        {"conversation_id": conversation_id, "user": user["username"]}
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    token = str(uuid.uuid4()).replace("-", "")[:12]
+    share_doc = {
+        "token": token,
+        "conversation_id": conversation_id,
+        "shared_by": user["username"],
+        "title": doc.get("title", "Shared conversation"),
+        "turns": doc.get("turns", []),
+        "created_at": _now(),
+    }
+    await db["nva_shares"].replace_one(
+        {"conversation_id": conversation_id},
+        {**share_doc, "_id": token},
+        upsert=True,
+    )
+    return {"token": token, "url": f"/share/{token}"}
+
+
+@router.get("/share/{token}")
+async def get_shared_conversation(token: str) -> dict:
+    db = await get_db()
+    if db is None:
+        raise HTTPException(status_code=503, detail="DB unavailable")
+    doc = await db["nva_shares"].find_one({"token": token}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Share not found")
+    return doc
+
+
+@router.delete("/cache/{cache_key}")
+async def delete_cache_entry(
+    cache_key: str,
+    user: dict = Depends(get_current_user),
+) -> dict:
+    db = await get_db()
+    try:
+        from backend.db.response_cache import delete_response  # noqa: PLC0415
+        deleted = await delete_response(db, cache_key)
+    except Exception:
+        deleted = False
+    return {"deleted": deleted, "cache_key": cache_key}
+
+
+@router.post("/feedback", status_code=201)
+async def submit_feedback(
+    body: FeedbackRequest,
+    user: dict = Depends(get_current_user),
+) -> dict:
+    db = await get_db()
+    record = {
+        "feedback_id": str(uuid.uuid4()),
+        "conversation_id": body.conversation_id,
+        "turn_index": body.turn_index,
+        "user": user["username"],
+        "rating": body.rating,
+        "comment": body.comment,
+        "timestamp": _now(),
+    }
+    if db is not None:
+        await db["nva_feedback"].insert_one({**record, "_id": record["feedback_id"]})
+    return {"status": "ok", "feedback_id": record["feedback_id"]}
+
+
+# ── Structured bookings ───────────────────────────────────────────────────────
+
+def _next_booking_seq_sync() -> int:
+    import random
+    return random.randint(1, 99999)
+
+
+@router.post("/bookings", status_code=201)
+async def create_booking(
+    body: BookingRequest,
+    user: dict = Depends(get_current_user),
+) -> dict:
+    year = datetime.now(timezone.utc).year
+    db = await get_db()
+
+    seq = 1
+    if db is not None:
+        try:
+            count = await db["nva_bookings"].count_documents({"booking_year": year})
+            seq = count + 1
+        except Exception:
+            seq = _next_booking_seq_sync()
+
+    reference = f"NVA-{year}-{seq:05d}"
+    booking_id = str(uuid.uuid4())
+    now = _now()
+
+    doc = {
+        "booking_id": booking_id,
+        "reference": reference,
+        "status": "confirmed",
+        "user": user["username"],
+        "booking_year": year,
+        "flight_id": body.flight_id,
+        "flight_number": body.flight_number,
+        "origin": body.origin,
+        "destination": body.destination,
+        "depart_date": body.depart_date,
+        "cabin_class": body.cabin_class,
+        "price_usd": body.price_usd,
+        "passenger": body.passenger.model_dump(),
+        "seat_preference": body.seat_preference,
+        "meal_preference": body.meal_preference,
+        "special_assistance": body.special_assistance or "",
+        "created_at": now,
+    }
+
+    if db is not None:
+        try:
+            await db["nva_bookings"].insert_one({**doc, "_id": booking_id})
+        except Exception:
+            pass
+
+    return {
+        "booking_id": booking_id,
+        "reference": reference,
+        "status": "confirmed",
+        "created_at": now,
+    }
+
+
+@router.get("/bookings/{booking_id}")
+async def get_booking(
+    booking_id: str,
+    user: dict = Depends(get_current_user),
+) -> dict:
+    db = await get_db()
+    if db is None:
+        raise HTTPException(status_code=503, detail="DB unavailable")
+    doc = await db["nva_bookings"].find_one({"booking_id": booking_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    if doc.get("user") != user["username"]:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return doc

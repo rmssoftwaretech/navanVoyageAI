@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ProgressCircle, SearchField } from '@react-spectrum/s2'
+import { ProgressCircle, SearchField, TableView, TableHeader, Column, TableBody, Row, Cell } from '@react-spectrum/s2'
 import { getAuditLog } from '@/services/admin'
 import type { AuditEntry } from '@/services/admin'
 
@@ -40,34 +40,30 @@ export default function AuditLogTab() {
           {entries.length === 0 ? 'No audit entries yet.' : 'No entries match the filter.'}
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={tbl}>
-            <thead>
-              <tr style={{ background: '#f8fafc' }}>
-                <th style={th}>Time</th>
-                <th style={th}>Agent</th>
-                <th style={th}>Action</th>
-                <th style={th}>Latency</th>
-                <th style={th}>User</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((e, i) => (
-                <tr key={e.log_id ?? i} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={td}>{fmt(e.timestamp)}</td>
-                  <td style={td}>
-                    <span style={{ ...badge, background: AGENT_COLORS[e.agent] ?? '#374151' }}>
-                      {e.agent}
-                    </span>
-                  </td>
-                  <td style={{ ...td, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.action}</td>
-                  <td style={td}>{e.latency_ms != null ? `${e.latency_ms}ms` : '—'}</td>
-                  <td style={{ ...td, color: '#94a3b8' }}>{e.user ?? '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <TableView aria-label="Audit log" density="compact" UNSAFE_style={{ width: '100%' }}>
+          <TableHeader>
+            <Column isRowHeader>Time</Column>
+            <Column>Agent</Column>
+            <Column>Action</Column>
+            <Column>Latency</Column>
+            <Column>User</Column>
+          </TableHeader>
+          <TableBody items={filtered.map((e, i) => ({ ...e, _key: e.log_id ?? String(i) }))}>
+            {(e) => (
+              <Row id={e._key}>
+                <Cell>{fmt(e.timestamp)}</Cell>
+                <Cell>
+                  <span style={{ ...badge, background: AGENT_COLORS[e.agent] ?? '#374151' }}>
+                    {e.agent}
+                  </span>
+                </Cell>
+                <Cell>{e.action}</Cell>
+                <Cell>{e.latency_ms != null ? `${e.latency_ms}ms` : '—'}</Cell>
+                <Cell>{e.user ?? '—'}</Cell>
+              </Row>
+            )}
+          </TableBody>
+        </TableView>
       )}
     </div>
   )
@@ -75,7 +71,4 @@ export default function AuditLogTab() {
 
 const center: React.CSSProperties = { display: 'flex', justifyContent: 'center', padding: 40 }
 const heading: React.CSSProperties = { margin: 0, fontSize: 15, fontWeight: 700, color: '#1E3A5F' }
-const tbl: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 13 }
-const th: React.CSSProperties = { padding: '8px 12px', textAlign: 'left', fontWeight: 600, color: '#475569', borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap' }
-const td: React.CSSProperties = { padding: '7px 12px', color: '#334155', verticalAlign: 'middle' }
 const badge: React.CSSProperties = { display: 'inline-block', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 700, color: '#fff', textTransform: 'capitalize' }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Button, ProgressCircle } from '@react-spectrum/s2'
+import { ActionButton, Button, ProgressCircle, ToastQueue } from '@react-spectrum/s2'
 import type { AgentEvent, Conversation, MessageTurn, User } from '@/types/nva'
 import { getMe, logout } from '@/services/auth'
 import {
@@ -57,7 +57,9 @@ export default function ChatPage() {
     try {
       await sendMessage(activeId, content, (event: AgentEvent) => {
         if (event.type === 'agent_start' && event.agent) agents.add(event.agent)
-        else if (event.type === 'token' && event.data) {
+        else if (event.type === 'booking_confirmed') {
+          ToastQueue.positive(`✈ Booking ${event.data ?? 'confirmed'}`, { timeout: 5000 })
+        } else if (event.type === 'token' && event.data) {
           assembled += event.data
           setStreamContent(assembled)
         } else if (event.type === 'done') {
@@ -72,6 +74,7 @@ export default function ChatPage() {
         }
       })
     } catch {
+      ToastQueue.negative('Connection error — please try again.', { timeout: 6000 })
       setTurns((prev) => [...prev, {
         role: 'assistant',
         content: 'Sorry, something went wrong. Please try again.',
@@ -122,30 +125,34 @@ export default function ChatPage() {
             <p style={{ padding: 12, fontSize: 12, color: '#94a3b8' }}>No conversations yet.</p>
           ) : (
             convs.map((c) => (
-              <button
+              <ActionButton
                 key={c.conversation_id}
-                onClick={() => setActiveId(c.conversation_id)}
-                style={{
+                onPress={() => setActiveId(c.conversation_id)}
+                isQuiet
+                UNSAFE_style={{
+                  width: '100%',
+                  justifyContent: 'flex-start',
                   textAlign: 'left',
                   padding: '10px 14px',
-                  fontSize: 13,
-                  background: activeId === c.conversation_id ? '#EFF6FF' : 'transparent',
+                  borderRadius: 0,
                   borderLeft: activeId === c.conversation_id ? '3px solid var(--nva-navy)' : '3px solid transparent',
-                  borderTop: 'none',
-                  borderRight: 'none',
                   borderBottom: '1px solid #e2e8f0',
-                  cursor: 'pointer',
+                  background: activeId === c.conversation_id ? '#EFF6FF' : 'transparent',
                   color: activeId === c.conversation_id ? 'var(--nva-navy)' : '#334155',
                   fontWeight: activeId === c.conversation_id ? 600 : 400,
+                  height: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
                 }}
               >
-                <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
                   {c.title || 'Untitled'}
-                </div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
+                </span>
+                <span style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
                   {c.turns_count} turns
-                </div>
-              </button>
+                </span>
+              </ActionButton>
             ))
           )}
         </div>

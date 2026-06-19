@@ -9,6 +9,7 @@ import { MatDividerModule } from '@angular/material/divider'
 import { MatTooltipModule } from '@angular/material/tooltip'
 import { MatBadgeModule } from '@angular/material/badge'
 import { MatDialog, MatDialogModule } from '@angular/material/dialog'
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar'
 import { AuthService } from '../../services/auth.service'
 import { ChatService, Conversation, MessageTurn, AgentEvent } from '../../services/chat.service'
 import { MessageListComponent } from '../../components/message-list/message-list.component'
@@ -24,7 +25,7 @@ interface ToolEntry { agent: string; tool: string }
     CommonModule,
     MatButtonModule, MatIconModule, MatToolbarModule,
     MatSidenavModule, MatListModule, MatDividerModule,
-    MatTooltipModule, MatBadgeModule, MatDialogModule,
+    MatTooltipModule, MatBadgeModule, MatDialogModule, MatSnackBarModule,
     MessageListComponent, ChatInputComponent,
   ],
   template: `
@@ -148,6 +149,7 @@ export class ChatComponent implements OnInit {
     private auth: AuthService,
     private chat: ChatService,
     private dialog: MatDialog,
+    private snackBar: MatSnackBar,
   ) {}
 
   ngOnInit() {
@@ -187,6 +189,9 @@ export class ChatComponent implements OnInit {
       await this.chat.sendMessage(this.activeId, content, (event: AgentEvent) => {
         if (event.type === 'agent_start' && event.agent) {
           agents.add(event.agent)
+        } else if (event.type === 'booking_confirmed') {
+          const ref = event.data ?? 'confirmed'
+          this.snackBar.open(`✈ Booking ${ref} confirmed`, undefined, { duration: 5000, panelClass: 'nva-snack-success' })
         } else if (event.type === 'mcp_tool_call' && event.agent && event.data) {
           this.toolCalls = [...this.toolCalls, { agent: event.agent, tool: event.data }]
         } else if (event.type === 'token' && event.data) {
@@ -203,6 +208,7 @@ export class ChatComponent implements OnInit {
         }
       })
     } catch {
+      this.snackBar.open('Connection error — please try again.', 'Dismiss', { duration: 6000, panelClass: 'nva-snack-error' })
       this.turns = [...this.turns, {
         role: 'assistant',
         content: 'Sorry, something went wrong. Please try again.',
@@ -216,10 +222,12 @@ export class ChatComponent implements OnInit {
 
   openAdmin() {
     this.dialog.open(AdminDialogComponent, {
-      width: '80vw',
+      width: '82vw',
       maxWidth: '1200px',
-      maxHeight: '85vh',
+      height: '80vh',
+      maxHeight: '80vh',
       panelClass: 'nva-admin-dialog',
+      autoFocus: false,
       data: { username: this.user?.username },
     })
   }

@@ -71,5 +71,79 @@
     },
     "meal_per_diem_usd": 150,
     "applies_to": "executive"
+  },
+  {
+    "policy_id": "POL-004",
+    "name": "Company Executive Policy",
+    "description": "Policy for C-suite, President, Managing Director — highest tier with maximum flexibility",
+    "flight": {
+      "allowed_classes": ["Business", "First"],
+      "max_advance_booking_days": 365,
+      "min_advance_booking_days": 1,
+      "max_one_way_usd": 8000,
+      "max_roundtrip_usd": 14000,
+      "business_eligible_hours": 0,
+      "preferred_airlines": []
+    },
+    "hotel": {
+      "max_nightly_rate_usd": 800,
+      "allowed_tiers": ["4-star", "5-star"],
+      "preferred_chains": ["Four Seasons", "Ritz-Carlton", "St. Regis", "Marriott", "Hilton"]
+    },
+    "car_rental": {
+      "allowed_classes": ["Full-size", "Luxury", "Premium"],
+      "max_daily_rate_usd": 250
+    },
+    "meal_per_diem_usd": 200,
+    "applies_to": "company_executive"
+  },
+  {
+    "policy_id": "POL-005",
+    "name": "Sales Executive Policy",
+    "description": "Policy for Sales, Account Executives, and client-facing roles — includes client entertainment allowance",
+    "flight": {
+      "allowed_classes": ["Economy Plus", "Business"],
+      "max_advance_booking_days": 120,
+      "min_advance_booking_days": 5,
+      "max_one_way_usd": 1200,
+      "max_roundtrip_usd": 2200,
+      "business_eligible_hours": 4,
+      "preferred_airlines": ["United", "Delta", "American", "British Airways", "Lufthansa"]
+    },
+    "hotel": {
+      "max_nightly_rate_usd": 250,
+      "allowed_tiers": ["3-star", "4-star"],
+      "preferred_chains": ["Marriott", "Hilton", "Hyatt", "Sheraton"]
+    },
+    "car_rental": {
+      "allowed_classes": ["Intermediate", "Standard", "Full-size"],
+      "max_daily_rate_usd": 110
+    },
+    "meal_per_diem_usd": 90,
+    "applies_to": "sales_executive"
+  },
+  {
+    "policy_id": "POL-006",
+    "name": "Conference Traveller Policy",
+    "description": "Policy for conference attendees — economy group rates, use conference hotel block, advance booking required",
+    "flight": {
+      "allowed_classes": ["Economy"],
+      "max_advance_booking_days": 180,
+      "min_advance_booking_days": 21,
+      "max_one_way_usd": 450,
+      "max_roundtrip_usd": 800,
+      "preferred_airlines": ["United", "Delta", "American", "Southwest"]
+    },
+    "hotel": {
+      "max_nightly_rate_usd": 180,
+      "allowed_tiers": ["2-star", "3-star"],
+      "preferred_chains": ["Conference hotel block preferred", "Marriott", "Hilton"]
+    },
+    "car_rental": {
+      "allowed_classes": ["Economy", "Compact"],
+      "max_daily_rate_usd": 65
+    },
+    "meal_per_diem_usd": 45,
+    "applies_to": "conference_traveller"
   }
 ]

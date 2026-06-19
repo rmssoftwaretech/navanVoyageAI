@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getAuditLog } from '@/services/admin'
+import { usePolling } from '@/hooks/usePolling'
+import { downloadCsv } from '@/utils/export'
 
 // GPT-4o pricing (per token)
 const COST_IN  = 0.000005   // $5 / 1M input tokens
@@ -76,13 +78,34 @@ export default function BillingTab() {
   const [entries, setEntries] = useState<AuditEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [refreshing, setRefreshing] = useState(false)
 
-  useEffect(() => {
-    getAuditLog(500)
+  function fetchData() {
+    return getAuditLog(500)
       .then((data) => setEntries(data as AuditEntry[]))
       .catch(() => setError('Failed to load billing data.'))
-      .finally(() => setLoading(false))
-  }, [])
+  }
+
+  useEffect(() => { fetchData().finally(() => setLoading(false)) }, [])
+  usePolling(fetchData, 60_000)
+
+  async function handleRefresh() {
+    setRefreshing(true)
+    await fetchData()
+    setRefreshing(false)
+  }
+
+  function handleExportCsv() {
+    const stats = computeStats(entries)
+    const rows = stats.map((s) => ({
+      agent: s.agent,
+      calls: s.calls,
+      tokens_in: s.token_in,
+      tokens_out: s.token_out,
+      cost_usd: s.cost_usd.toFixed(6),
+    }))
+    downloadCsv(`nva-billing-${new Date().toISOString().slice(0, 10)}.csv`, rows)
+  }
 
   const monthEntries  = useMemo(() => thisMonthEntries(entries), [entries])
   const agentStats    = useMemo(() => computeStats(entries), [entries])
@@ -116,6 +139,40 @@ export default function BillingTab() {
 
   return (
     <div className="flex flex-col gap-6 h-full overflow-auto">
+
+      {/* Toolbar */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          style={{
+            padding: '5px 12px',
+            fontSize: 'var(--text-xs)',
+            border: '1px solid var(--border)',
+            background: 'transparent',
+            color: 'var(--text-muted)',
+            cursor: refreshing ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {refreshing ? '…' : '↺ Refresh'}
+        </button>
+        <button
+          onClick={handleExportCsv}
+          disabled={entries.length === 0}
+          style={{
+            padding: '5px 12px',
+            fontSize: 'var(--text-xs)',
+            fontWeight: 600,
+            border: '1px solid var(--brand)',
+            background: 'transparent',
+            color: 'var(--brand)',
+            cursor: entries.length === 0 ? 'not-allowed' : 'pointer',
+            opacity: entries.length === 0 ? 0.4 : 1,
+          }}
+        >
+          ↓ Export CSV
+        </button>
+      </div>
 
       {/* KPI row */}
       <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>

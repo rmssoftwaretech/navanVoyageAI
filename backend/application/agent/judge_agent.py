@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from backend.application.agent.base import AgentContext, AgentResult, BaseAgent
+from backend.application.agent.base import AgentContext, AgentResult, BaseAgent, get_prompt
 from backend.application.agent.registry import get_agent_config
 
 log = logging.getLogger(__name__)
@@ -46,11 +46,11 @@ async def _llm_score_azure(cfg: dict, user_msg: str, ai_response: str) -> dict:
     resp = await client.chat.completions.create(
         model=deployment,
         messages=[
-            {"role": "system", "content": _JUDGE_PROMPT},
+            {"role": "system", "content": get_prompt("judge")},
             {"role": "user", "content": user_content},
         ],
         temperature=0.0,
-        max_tokens=int(cfg.get("max_tokens", 512)),
+        max_completion_tokens=int(cfg.get("max_tokens", 512)),
     )
     raw = resp.choices[0].message.content or "{}"
     raw = re.sub(r"```(?:json)?\s*|\s*```", "", raw).strip()
@@ -64,7 +64,7 @@ async def _llm_score_claude(cfg: dict, user_msg: str, ai_response: str) -> dict:
     msg = await client.messages.create(
         model="claude-opus-4-7",
         max_tokens=int(cfg.get("max_tokens", 512)),
-        system=_JUDGE_PROMPT,
+        system=get_prompt("judge"),
         messages=[{"role": "user", "content": user_content}],
     )
     raw = msg.content[0].text if msg.content else "{}"

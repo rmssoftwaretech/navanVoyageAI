@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { getEvalScores } from '@/services/admin'
+import { usePolling } from '@/hooks/usePolling'
+import { downloadJson } from '@/utils/export'
 
 interface EvalScore {
   eval_id: string
@@ -53,13 +55,33 @@ export default function EvalMetricsTab() {
   const [loading, setLoading] = useState(true)
   const [error, setError]   = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [newIds, setNewIds] = useState<Set<string>>(new Set())
+  const knownIds = useRef<Set<string>>(new Set())
+
+  function fetchData() {
+    getEvalScores(200).then((data) => {
+      const incoming = data as EvalScore[]
+      const fresh = incoming.filter((e) => !knownIds.current.has(e.eval_id))
+      if (fresh.length) {
+        const freshSet = new Set(fresh.map((e) => e.eval_id))
+        setNewIds(freshSet)
+        setTimeout(() => setNewIds(new Set()), 1500)
+        fresh.forEach((e) => knownIds.current.add(e.eval_id))
+      }
+      incoming.forEach((e) => knownIds.current.add(e.eval_id))
+      setEvals(incoming)
+    }).catch(() => setError('Failed to load eval scores.'))
+  }
 
   useEffect(() => {
-    getEvalScores(200)
-      .then((data) => setEvals(data as EvalScore[]))
-      .catch(() => setError('Failed to load eval scores.'))
-      .finally(() => setLoading(false))
+    fetchData()
+    setLoading(false)
   }, [])
+  usePolling(fetchData, 15_000)
+
+  function handleExport() {
+    downloadJson(`nva-eval-${new Date().toISOString().slice(0, 10)}.json`, evals)
+  }
 
   const totalEvals   = evals.length
   const passed       = evals.filter((e) => e.passed).length
@@ -143,9 +165,27 @@ export default function EvalMetricsTab() {
 
       {/* Recent eval list */}
       <div className="flex flex-col gap-2 flex-1">
-        <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--navy)' }}>
-          Recent Evaluations
-        </h3>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--navy)' }}>
+            Recent Evaluations
+          </h3>
+          {evals.length > 0 && (
+            <button
+              onClick={handleExport}
+              style={{
+                padding: '4px 10px',
+                fontSize: 'var(--text-xs)',
+                fontWeight: 600,
+                border: '1px solid var(--brand)',
+                background: 'transparent',
+                color: 'var(--brand)',
+                cursor: 'pointer',
+              }}
+            >
+              ↓ Export JSON
+            </button>
+          )}
+        </div>
         {evals.length === 0 ? (
           <div className="flex items-center justify-center py-12 text-xs" style={{ color: 'var(--text-muted)' }}>
             No evaluations yet — JudgeAgent runs after each completed conversation turn.
@@ -165,14 +205,16 @@ export default function EvalMetricsTab() {
               <tbody>
                 {evals.map((e, i) => {
                   const open = expanded === e.eval_id
+                  const isNew = newIds.has(e.eval_id)
                   return (
                     <>
                       <tr
                         key={e.eval_id}
                         style={{
-                          background: i % 2 === 0 ? '#fff' : 'var(--surface)',
+                          background: isNew ? '#FEF9C3' : i % 2 === 0 ? 'var(--bg-surface)' : 'var(--bg-page)',
                           borderBottom: open ? 'none' : '1px solid var(--border)',
                           cursor: 'pointer',
+                          transition: 'background 1s ease',
                         }}
                         onClick={() => setExpanded(open ? null : e.eval_id)}
                       >

@@ -62,8 +62,27 @@ def _select_policy(policies: list[dict], entities: dict) -> dict | None:
         if destination.upper() not in domestic_prefixes and len(destination) == 3:
             is_international = True
 
-    if user_role in ("executive", "vp", "director"):
+    # Company executive — C-suite, highest priority
+    if user_role in ("company_executive", "ceo", "cto", "coo", "cfo", "president", "managing_director", "md", "c-suite"):
+        pol = next((p for p in policies if p.get("applies_to") == "company_executive"), None)
+        if pol:
+            return pol
+
+    # Legacy executive / VP / Director
+    if user_role in ("executive", "vp", "director", "vice_president"):
         pol = next((p for p in policies if p.get("applies_to") == "executive"), None)
+        if pol:
+            return pol
+
+    # Sales executive
+    if user_role in ("sales_executive", "sales", "account_executive", "ae", "sales_rep", "se", "account_manager"):
+        pol = next((p for p in policies if p.get("applies_to") == "sales_executive"), None)
+        if pol:
+            return pol
+
+    # Conference traveller
+    if user_role in ("conference_traveller", "conference", "attendee", "conference_attendee", "delegate"):
+        pol = next((p for p in policies if p.get("applies_to") == "conference_traveller"), None)
         if pol:
             return pol
 

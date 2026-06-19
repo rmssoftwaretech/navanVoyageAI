@@ -5,7 +5,7 @@ import json
 import logging
 import re
 
-from backend.application.agent.base import AgentContext, AgentResult, BaseAgent
+from backend.application.agent.base import AgentContext, AgentResult, BaseAgent, get_prompt
 
 log = logging.getLogger(__name__)
 
@@ -111,7 +111,7 @@ class DestinationAgent(BaseAgent):
             f"User message for context: {context.message}"
         )
         try:
-            raw = await self._chat(_BRIEF_PROMPT, user_prompt)
+            raw = await self._chat(get_prompt("destination"), user_prompt)
             raw = re.sub(r"```(?:json)?\s*|\s*```", "", raw).strip()
             data = json.loads(raw)
             content = _format_briefing(data)

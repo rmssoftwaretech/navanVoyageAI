@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'
+import { MatTableModule } from '@angular/material/table'
 import { AdminService, BillingEntry } from '../../services/admin.service'
 
 const MODEL_COSTS: Record<string, { input: number; output: number }> = {
@@ -12,7 +13,7 @@ const MODEL_COSTS: Record<string, { input: number; output: number }> = {
 @Component({
   selector: 'nva-billing-tab',
   standalone: true,
-  imports: [CommonModule, MatProgressSpinnerModule],
+  imports: [CommonModule, MatProgressSpinnerModule, MatTableModule],
   template: `
     <div style="padding: 8px 0;">
       <h3 style="margin: 0 0 20px; font-size: 15px; font-weight: 700; color: #1E3A5F;">Token Usage & Cost</h3>
@@ -49,17 +50,21 @@ const MODEL_COSTS: Record<string, { input: number; output: number }> = {
 
           <details>
             <summary style="font-size: 12px; color: #64748b; cursor: pointer; font-weight: 600;">List pricing reference (per 1M tokens)</summary>
-            <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px;">
-              <thead><tr style="background: #f8fafc;">
-                <th *ngFor="let h of ['Model','Input','Output']" style="padding: 7px 12px; text-align: left; font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0;">{{ h }}</th>
-              </tr></thead>
-              <tbody>
-                <tr *ngFor="let m of modelCostEntries" style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 6px 12px; color: #334155;">{{ m.model }}</td>
-                  <td style="padding: 6px 12px; color: #334155;">\${{ m.input }}</td>
-                  <td style="padding: 6px 12px; color: #334155;">\${{ m.output }}</td>
-                </tr>
-              </tbody>
+            <table mat-table [dataSource]="modelCostEntries" style="width: 100%; margin-top: 10px;">
+              <ng-container matColumnDef="model">
+                <th mat-header-cell *matHeaderCellDef>Model</th>
+                <td mat-cell *matCellDef="let m">{{ m.model }}</td>
+              </ng-container>
+              <ng-container matColumnDef="input">
+                <th mat-header-cell *matHeaderCellDef>Input / 1M</th>
+                <td mat-cell *matCellDef="let m">\${{ m.input }}</td>
+              </ng-container>
+              <ng-container matColumnDef="output">
+                <th mat-header-cell *matHeaderCellDef>Output / 1M</th>
+                <td mat-cell *matCellDef="let m">\${{ m.output }}</td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="['model','input','output']"></tr>
+              <tr mat-row *matRowDef="let row; columns: ['model','input','output']"></tr>
             </table>
           </details>
         </ng-container>

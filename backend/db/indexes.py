@@ -48,8 +48,12 @@ async def create_indexes(db: AsyncIOMotorDatabase) -> None:
         await db["nva_billing"].create_index([("model", ASCENDING)])
         await db["nva_billing"].create_index([("agent", ASCENDING)])
 
-        # nva_user_memory (NVA-19)
-        await db["nva_user_memory"].create_index([("user", ASCENDING)], unique=True)
+        # nva_user_memory (NVA-19) — unique per user+category+fact combination
+        await db["nva_user_memory"].create_index([("user", ASCENDING)])
+        await db["nva_user_memory"].create_index(
+            [("user", ASCENDING), ("category", ASCENDING), ("fact", ASCENDING)],
+            unique=True,
+        )
 
         log.info("MongoDB indexes created / verified for navanVoyageAI")
     except Exception as exc:

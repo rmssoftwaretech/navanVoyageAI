@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <!-- Light background -->
+  <rect width="32" height="32" rx="6" fill="#f1f3f5"/>
+  <!-- Speed lines -->
+  <g fill="#8C9CAB">
+    <rect x="2"  y="8"  width="9"  height="1.5" rx="0.75"/>
+    <rect x="1"  y="11" width="11" height="1.5" rx="0.75"/>
+    <rect x="0"  y="14" width="12" height="1.5" rx="0.75"/>
+    <rect x="0"  y="17" width="12" height="1.5" rx="0.75"/>
+    <rect x="1"  y="20" width="11" height="1.5" rx="0.75"/>
+    <rect x="2"  y="23" width="9"  height="1.5" rx="0.75"/>
+  </g>
+  <!-- Streak lines -->
+  <path stroke="#8B1A3C" stroke-width="1.5" stroke-linecap="round" fill="none" d="M 19 8 Q 24 5, 31 3"/>
+  <path stroke="#8B1A3C" stroke-width="1" stroke-linecap="round" fill="none" d="M 20 6 Q 25 4, 31 2"/>
+  <!-- Main body -->
+  <path fill="#8B1A3C" d="M 10 22 C 8 19, 8 15, 10 12 C 13 9, 17 8, 21 9 C 24 10, 25 14, 25 18 L 23 23 C 19 25, 14 25, 10 22 Z"/>
+  <!-- Fingers -->
+  <polygon fill="#8B1A3C" points="23,15 30,11 24,19"/>
+  <polygon fill="#8B1A3C" points="24,18 30,18 24,22"/>
+  <polygon fill="#8B1A3C" points="23,22 27,24 22,25"/>
+  <!-- White flame -->
+  <path fill="white" opacity="0.85" d="M 16 14 L 15 11 C 15 10, 17 10, 17 12 C 18 13, 17 14, 17 15 C 18 13, 19 12, 19 11 C 20 13, 19 15, 18 17 C 17 18, 16 17, 16 14 Z"/>
+</svg>

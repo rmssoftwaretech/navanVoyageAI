@@ -2,6 +2,37 @@ import axios from 'axios'
 import { getToken } from './auth'
 import type { AgentEvent, Conversation, MessageTurn } from '@/types/nva'
 
+export async function deleteCachedResponse(cacheKey: string): Promise<boolean> {
+  const { data } = await axios.delete<{ deleted: boolean }>(`/api/chat/cache/${cacheKey}`)
+  return data.deleted
+}
+
+export async function renameConversation(conversationId: string, title: string): Promise<void> {
+  await axios.patch(`/api/chat/conversations/${conversationId}`, { title })
+}
+
+export async function reactToTurn(conversationId: string, turnIndex: number, emoji: string): Promise<void> {
+  await axios.post(`/api/chat/conversations/${conversationId}/turns/${turnIndex}/react`, { emoji })
+}
+
+export async function starTurn(conversationId: string, turnIndex: number, starred: boolean): Promise<void> {
+  await axios.patch(`/api/chat/conversations/${conversationId}/turns/${turnIndex}/star`, { starred })
+}
+
+export async function submitFeedback(
+  conversationId: string,
+  turnIndex: number,
+  rating: 'up' | 'down' | 'flag',
+  comment?: string
+): Promise<void> {
+  await axios.post('/api/chat/feedback', {
+    conversation_id: conversationId,
+    turn_index: turnIndex,
+    rating,
+    comment: comment ?? null,
+  })
+}
+
 export async function getConversationEval(conversationId: string): Promise<Record<string, unknown>> {
   const { data } = await axios.get<Record<string, unknown>>(`/api/chat/conversations/${conversationId}/eval`)
   return data
@@ -31,7 +62,8 @@ export async function sendMessage(
   conversationId: string,
   content: string,
   onEvent: (event: AgentEvent) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  customContext?: string
 ): Promise<void> {
   const response = await fetch('/api/chat/send', {
     method: 'POST',
@@ -39,7 +71,11 @@ export async function sendMessage(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${getToken()}`,
     },
-    body: JSON.stringify({ conversation_id: conversationId, content }),
+    body: JSON.stringify({
+      conversation_id: conversationId,
+      content,
+      custom_context: customContext || null,
+    }),
     signal,
   })
 

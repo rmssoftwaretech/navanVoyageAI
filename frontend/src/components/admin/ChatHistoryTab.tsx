@@ -8,6 +8,8 @@ interface Turn {
   agents?: string[]
   eval_score?: number
   eval_passed?: boolean
+  starred?: boolean
+  reactions?: Record<string, number>
 }
 
 interface Conversation {
@@ -203,7 +205,7 @@ export default function ChatHistoryTab() {
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No turns in this conversation.</p>
               ) : (
                 (selected.turns ?? []).map((turn, i) => (
-                  <TurnBubble key={i} turn={turn} />
+                  <TurnBubble key={i} turn={turn} conversationId={selected.conversation_id} turnIndex={i} />
                 ))
               )}
             </div>
@@ -214,10 +216,30 @@ export default function ChatHistoryTab() {
   )
 }
 
-function TurnBubble({ turn }: { turn: Turn }) {
+function loadNote(conversationId: string, turnIndex: number) {
+  try {
+    const raw = localStorage.getItem(`nva_note_${conversationId}_${turnIndex}`)
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
+function TurnBubble({ turn, conversationId, turnIndex }: { turn: Turn; conversationId: string; turnIndex: number }) {
   const isUser = turn.role === 'user'
+  const note = !isUser ? loadNote(conversationId, turnIndex) : null
+  const activeReactions = Object.entries(turn.reactions ?? {}).filter(([, c]) => c > 0)
+
   return (
-    <div className={`flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
+    <div
+      className={`flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}
+      style={turn.starred ? { borderLeft: '3px solid #D97706', paddingLeft: 8 } : undefined}
+    >
+      {/* Starred label */}
+      {turn.starred && (
+        <span style={{ fontSize: 10, color: '#D97706', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+          ⭐ Starred
+        </span>
+      )}
+
       <div
         className="max-w-prose px-3 py-2 text-xs"
         style={{
@@ -231,38 +253,68 @@ function TurnBubble({ turn }: { turn: Turn }) {
         {turn.content}
       </div>
 
-      {/* Meta row */}
-      <div className="flex items-center gap-2 px-1">
-        <span className="text-xs" style={{ color: 'var(--text-muted)', fontSize: 10 }}>
-          {fmtTs(turn.timestamp)}
-        </span>
+      {/* Reactions */}
+      {activeReactions.length > 0 && (
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          {activeReactions.map(([emoji, count]) => (
+            <span key={emoji} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 3,
+              padding: '1px 7px', fontSize: 11,
+              background: 'var(--bg-page)',
+              border: '1px solid var(--border)',
+              borderRadius: 999,
+            }}>
+              {emoji}
+              {count > 1 && <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)' }}>{count}</span>}
+            </span>
+          ))}
+        </div>
+      )}
 
-        {/* Agent badges */}
+      {/* Note */}
+      {note && (
+        <div style={{
+          padding: '5px 9px',
+          background: 'rgba(217,119,6,0.06)',
+          border: '1px solid rgba(217,119,6,0.25)',
+          borderRadius: 6,
+          fontSize: 10,
+          color: 'var(--text-secondary, #374151)',
+          lineHeight: 1.5,
+          display: 'flex', gap: 6, alignItems: 'flex-start',
+          maxWidth: '80%',
+        }}>
+          <span>📝</span>
+          <div>
+            {note.highlight && (
+              <div style={{ fontStyle: 'italic', color: '#92600A', marginBottom: 2, borderLeft: '2px solid rgba(217,119,6,0.4)', paddingLeft: 5 }}>
+                "{note.highlight}"
+              </div>
+            )}
+            {note.note}
+          </div>
+        </div>
+      )}
+
+      {/* Meta row */}
+      <div className="flex items-center gap-2 px-1 flex-wrap">
+        <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>{fmtTs(turn.timestamp)}</span>
+
         {!isUser && (turn.agents ?? []).map((a) => (
-          <span
-            key={a}
-            className="text-xs px-1.5 py-0.5"
-            style={{
-              background: `${AGENT_COLORS[a] ?? '#6B7280'}22`,
-              color: AGENT_COLORS[a] ?? '#6B7280',
-              border: `1px solid ${AGENT_COLORS[a] ?? '#6B7280'}44`,
-              fontSize: 10,
-            }}
-          >
-            {a}
-          </span>
+          <span key={a} style={{
+            background: `${AGENT_COLORS[a] ?? '#6B7280'}22`,
+            color: AGENT_COLORS[a] ?? '#6B7280',
+            border: `1px solid ${AGENT_COLORS[a] ?? '#6B7280'}44`,
+            fontSize: 10, padding: '1px 6px',
+          }}>{a}</span>
         ))}
 
-        {/* Eval score badge */}
         {!isUser && turn.eval_score !== undefined && (
-          <span
-            className="text-xs px-1.5 py-0.5 font-mono"
-            style={{
-              background: scoreBg(turn.eval_score),
-              color: scoreColor(turn.eval_score),
-              fontSize: 10,
-            }}
-          >
+          <span style={{
+            background: scoreBg(turn.eval_score),
+            color: scoreColor(turn.eval_score),
+            fontSize: 10, padding: '1px 6px', fontFamily: 'monospace',
+          }}>
             {turn.eval_passed ? '✓' : '✕'} {(turn.eval_score * 100).toFixed(0)}%
           </span>
         )}

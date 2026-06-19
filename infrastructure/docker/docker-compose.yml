@@ -21,6 +21,11 @@ services:
     environment:
       - PYTHONPATH=/app
       - AMADEUS_MCP_URL=http://amadeus-mcp:8101
+      - CAR_RENTAL_MCP_URL=http://car-rental-mcp:8102
+      - HOTEL_BOOKING_MCP_URL=http://hotel-booking-mcp:8103
+    volumes:
+      - ../../config:/app/config
+      - ../../data:/app/data:ro
     networks:
       - nva-net
 
@@ -32,6 +37,26 @@ services:
       - "8101:8101"
     env_file:
       - ../../.env
+    volumes:
+      - ../../data:/app/data:ro
+    networks:
+      - nva-net
+
+  car-rental-mcp:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.car-rental-mcp
+    ports:
+      - "8102:8102"
+    networks:
+      - nva-net
+
+  hotel-booking-mcp:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.hotel-booking-mcp
+    ports:
+      - "8103:8103"
     networks:
       - nva-net
 

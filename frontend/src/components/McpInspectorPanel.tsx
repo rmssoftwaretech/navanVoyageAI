@@ -21,6 +21,7 @@ function consoleColor(type: string): string {
   if (type === 'agent_done') return 'var(--success)'
   if (type === 'done') return 'var(--success)'
   if (type === 'error') return 'var(--danger)'
+  if (type === 'agent_route') return 'var(--brand)'
   if (type.startsWith('tot_')) return 'var(--warning)'
   return 'var(--text-muted)'
 }
@@ -117,32 +118,482 @@ function OutputCell({ value }: { value: unknown }) {
 
 /* ── Console row ─────────────────────────────────────────────────────── */
 
+function consolePreview(event: AgentEvent): string {
+  switch (event.type) {
+    case 'agent_route': return `→ [${(event.agents as string[] ?? []).join(', ') || 'direct'}] intent=${event.intent ?? '?'} — ${event.reasoning ?? ''}`
+    case 'agent_start': return `→ dispatch to ${event.agent}: ${truncate(event.input, 55)}`
+    case 'agent_done': return `← ${event.agent} done (${event.latency_ms ?? '?'}ms): ${truncate(event.output, 45)}`
+    case 'mcp_tool_call': return `→ ${event.tool} ${truncate(event.input, 55)}`
+    case 'mcp_tool_result': return `← ${event.tool} (${event.latency_ms ?? '?'}ms): ${truncate(event.output, 45)}`
+    case 'token': return truncate(event.data, 60)
+    case 'tot_start': return `🌳 Starting Tree of Thought — ${event.branches ?? '?'} branches`
+    case 'tot_branch': return `🌿 Branch ${event.index ?? '?'} [${event.angle ?? ''}] ${truncate(event.content, 45)}`
+    case 'tot_evaluate': return `⚖ Branch ${event.index ?? '?'} score=${typeof event.score === 'number' ? event.score.toFixed(2) : '?'} — ${truncate(event.rationale, 45)}`
+    case 'tot_selected': return `✓ Selected branch ${event.index ?? '?'}: ${truncate(event.content, 50)}`
+    case 'tot_error': return `✕ ToT error: ${event.error ?? 'unknown'}`
+    case 'eval_result': {
+      const pct = event.score != null ? `${Math.round(Number(event.score) * 100)}%` : '?'
+      return `🧑‍⚖️ JudgeAgent: ${pct} ${event.content ? `— ${truncate(event.content, 45)}` : ''}`
+    }
+    case 'done': return `✓ Turn complete — input=${event.input_tokens ?? '?'} out=${event.output_tokens ?? '?'} model=${event.model ?? '?'}`
+    case 'error': return `✕ ${event.error ?? 'unknown error'}`
+    default: return truncate(event, 65)
+  }
+}
+
 function ConsoleRow({ event }: { event: AgentEvent }) {
   const [expanded, setExpanded] = useState(false)
   const color = consoleColor(event.type)
+  const isTot = event.type.startsWith('tot_')
+  const isHandshake = event.type === 'agent_route' || event.type === 'agent_start' || event.type === 'agent_done'
+
   return (
     <div
       onClick={() => setExpanded((x) => !x)}
       style={{
         padding: '4px 10px', borderBottom: '1px solid var(--border-light)',
-        cursor: 'pointer', background: expanded ? 'var(--bg-hover)' : 'transparent',
+        cursor: 'pointer',
+        background: expanded ? 'var(--bg-hover)' : isTot ? 'rgba(245,158,11,0.04)' : 'transparent',
+        borderLeft: isTot ? '2px solid var(--warning)' : event.type === 'eval_result' ? '2px solid var(--success)' : '2px solid transparent',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <span style={{ fontSize: 10, color: 'var(--text-dim)', flexShrink: 0 }}>{fmtTs(event.ts)}</span>
-        <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 'var(--r-sm)', background: `${color}18`, color, fontWeight: 700, flexShrink: 0 }}>
+        {/* ToT icon — visible tree SVG for all tot_* events */}
+        {isTot && (
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }} aria-label="Tree of Thought">
+            {/* trunk */}
+            <line x1="12" y1="22" x2="12" y2="13" stroke="var(--warning)" strokeWidth="2" strokeLinecap="round"/>
+            {/* left branch */}
+            <line x1="12" y1="16" x2="6"  y2="10" stroke="var(--warning)" strokeWidth="2" strokeLinecap="round"/>
+            {/* right branch */}
+            <line x1="12" y1="16" x2="18" y2="10" stroke="var(--warning)" strokeWidth="2" strokeLinecap="round"/>
+            {/* left leaf */}
+            <circle cx="6"  cy="8" r="2.5" fill="var(--warning)"/>
+            {/* right leaf */}
+            <circle cx="18" cy="8" r="2.5" fill="var(--warning)"/>
+            {/* center top */}
+            <circle cx="12" cy="5" r="2.5" fill="var(--warning)"/>
+            <line x1="12" y1="13" x2="12" y2="7.5" stroke="var(--warning)" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        )}
+        <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 'var(--r-sm)', background: `${color}18`, color, fontWeight: 700, flexShrink: 0, maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {event.type}
         </span>
-        {event.agent && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', flexShrink: 0 }}>{event.agent}</span>}
-        {event.tool && <span style={{ fontSize: 'var(--text-xs)', color: '#a855f7', flexShrink: 0 }}>{event.tool}</span>}
-        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {event.type === 'token' ? truncate(event.data, 50) : truncate(event, 60)}
+        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+          {consolePreview(event)}
         </span>
+        {isHandshake && event.latency_ms != null && (
+          <span style={{ fontSize: 10, color: 'var(--text-dim)', flexShrink: 0, fontFamily: 'var(--font-mono)' }}>
+            {event.latency_ms}ms
+          </span>
+        )}
       </div>
       {expanded && (
         <pre style={{ marginTop: 4, padding: 8, background: '#0f172a', color: '#e2e8f0', fontSize: 11, borderRadius: 'var(--r-md)', overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all', lineHeight: 1.4 }}>
           {JSON.stringify(event, null, 2)}
         </pre>
+      )}
+    </div>
+  )
+}
+
+/* ── Agent Events tab ────────────────────────────────────────────────── */
+
+const AGENT_COLORS: Record<string, string> = {
+  search: '#3b82f6',
+  policy: '#f59e0b',
+  destination: '#10b981',
+  booking: '#8b5cf6',
+  support: '#06b6d4',
+  orchestrator: 'var(--brand)',
+}
+
+function agentColor(name: string) {
+  return AGENT_COLORS[name] ?? 'var(--text-secondary)'
+}
+
+interface HandshakePair {
+  agent: string
+  startEvent?: AgentEvent
+  doneEvent?: AgentEvent
+}
+
+function AgentEventsTab({ events, isStreaming }: { events: AgentEvent[]; isStreaming: boolean }) {
+  const routeEvent = events.find((e) => e.type === 'agent_route')
+
+  // Build ordered list of agent handshake pairs
+  const pairs: HandshakePair[] = []
+  const pairMap: Record<string, HandshakePair> = {}
+  for (const e of events) {
+    const agentStr = e.agent as string | undefined
+    if (e.type === 'agent_start' && agentStr && agentStr !== 'orchestrator') {
+      const p: HandshakePair = { agent: agentStr, startEvent: e }
+      pairs.push(p)
+      pairMap[agentStr] = p
+    } else if (e.type === 'agent_done' && agentStr && agentStr !== 'orchestrator') {
+      if (pairMap[agentStr]) {
+        pairMap[agentStr].doneEvent = e
+      }
+    }
+  }
+
+  if (!routeEvent && pairs.length === 0 && !isStreaming) {
+    return (
+      <div style={{ padding: '12px', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+        <p style={{ marginBottom: 6 }}>No agent handshakes yet.</p>
+        <p style={{ color: 'var(--text-dim)', lineHeight: 1.6 }}>
+          Agent-to-agent JSON messages appear here as the Orchestrator dispatches and receives results from sub-agents.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+      {/* Routing decision card */}
+      {routeEvent && (
+        <div style={{
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--r-md)',
+          overflow: 'hidden',
+        }}>
+          {/* Header */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '6px 10px',
+            background: 'var(--bg-page)',
+            borderBottom: '1px solid var(--border)',
+          }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--brand)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Route
+            </span>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)', fontWeight: 600 }}>
+              orchestrator
+            </span>
+            <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)' }}>→</span>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+              [{(routeEvent.agents as string[] ?? []).join(', ') || 'direct'}]
+            </span>
+            {routeEvent.intent && (
+              <span style={{
+                marginLeft: 'auto', fontSize: 10, padding: '1px 6px',
+                background: 'var(--brand-light)', color: 'var(--brand)',
+                borderRadius: 'var(--r-sm)', fontWeight: 600,
+              }}>
+                {routeEvent.intent}
+              </span>
+            )}
+          </div>
+
+          {/* Route body */}
+          <div style={{ padding: '8px 10px' }}>
+            {routeEvent.reasoning && (
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: 8, fontStyle: 'italic' }}>
+                "{routeEvent.reasoning}"
+              </p>
+            )}
+            <JsonBlock
+              data={{
+                type: 'agent_route',
+                from: 'orchestrator',
+                agents: routeEvent.agents,
+                intent: routeEvent.intent,
+                reasoning: routeEvent.reasoning,
+                input_preview: routeEvent.input_preview,
+              }}
+              label="routing decision payload"
+              dir="→"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Per-agent handshake cards */}
+      {pairs.map((pair, i) => {
+        const color = agentColor(pair.agent)
+        const isRunning = pair.startEvent && !pair.doneEvent && isStreaming
+        const latency = pair.doneEvent?.latency_ms
+
+        return (
+          <div key={i} style={{
+            border: `1px solid ${color}40`,
+            borderRadius: 'var(--r-md)',
+            overflow: 'hidden',
+          }}>
+            {/* Agent header */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '6px 10px',
+              background: `${color}10`,
+              borderBottom: `1px solid ${color}30`,
+            }}>
+              <span style={{
+                width: 7, height: 7, borderRadius: '50%',
+                background: isRunning ? 'var(--warning)' : pair.doneEvent ? 'var(--success)' : 'var(--border)',
+                flexShrink: 0,
+              }} />
+              <span style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color }}>{pair.agent}Agent</span>
+              <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 'auto' }}>
+                {isRunning ? (
+                  <span style={{ color: 'var(--warning)' }}>running…</span>
+                ) : latency != null ? (
+                  <span style={{ fontFamily: 'var(--font-mono)' }}>{latency}ms</span>
+                ) : null}
+              </span>
+            </div>
+
+            {/* Request */}
+            <div style={{ padding: '8px 10px', borderBottom: pair.doneEvent ? `1px solid ${color}20` : undefined }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand)', fontFamily: 'var(--font-mono)' }}>→</span>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  orchestrator → {pair.agent}
+                </span>
+                <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 'auto' }}>{fmtTs(pair.startEvent?.ts)}</span>
+              </div>
+              {pair.startEvent?.input ? (
+                <JsonBlock data={pair.startEvent.input} label="request payload" dir="→" />
+              ) : (
+                <div style={{ fontSize: 11, color: 'var(--text-dim)', fontStyle: 'italic' }}>No input payload captured</div>
+              )}
+            </div>
+
+            {/* Response */}
+            {pair.doneEvent && (
+              <div style={{ padding: '8px 10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>←</span>
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    {pair.agent} → orchestrator
+                  </span>
+                  <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 'auto' }}>{fmtTs(pair.doneEvent.ts)}</span>
+                </div>
+                <JsonBlock data={pair.doneEvent.output} label="response payload" dir="←" />
+              </div>
+            )}
+
+            {/* Running placeholder */}
+            {isRunning && !pair.doneEvent && (
+              <div style={{ padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--warning)', display: 'inline-block' }} />
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--warning)', fontStyle: 'italic' }}>awaiting response…</span>
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+/* ── Network tab ────────────────────────────────────────────────────── */
+
+interface ToolRow { seq: number; call: AgentEvent; result?: AgentEvent }
+
+function NetworkTab({ toolRows, isStreaming }: { toolRows: ToolRow[]; isStreaming: boolean }) {
+  const [expandedSeq, setExpandedSeq] = useState<number | null>(null)
+  const [detailPane, setDetailPane] = useState<'request' | 'response'>('request')
+
+  if (toolRows.length === 0) {
+    return (
+      <p style={{ padding: '12px', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+        MCP sidecar requests appear when tools are called.
+      </p>
+    )
+  }
+
+  const selected = toolRows.find((r) => r.seq === expandedSeq)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+
+      {/* Request table */}
+      <div style={{ overflowX: 'auto', flexShrink: 0, borderBottom: expandedSeq ? '1px solid var(--border)' : undefined }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-xs)' }}>
+          <thead>
+            <tr style={{ background: 'var(--bg-page)' }}>
+              {['', 'Method', 'Tool / URL', 'Agent', 'Status', 'ms', 'Time'].map((h) => (
+                <th key={h} style={{ padding: '4px 8px', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {toolRows.map(({ seq, call, result }) => {
+              const isSelected = expandedSeq === seq
+              const rowBg = isSelected
+                ? 'var(--brand-light)'
+                : seq % 2 === 0 ? 'var(--bg-page)' : 'var(--bg-surface)'
+              return (
+                <tr
+                  key={seq}
+                  onClick={() => { setExpandedSeq(isSelected ? null : seq); setDetailPane('request') }}
+                  style={{ background: rowBg, cursor: 'pointer' }}
+                >
+                  <td style={{ padding: '4px 6px', color: 'var(--text-dim)', borderBottom: '1px solid var(--border-light)', width: 20 }}>{seq}</td>
+                  <td style={{ padding: '4px 8px', color: 'var(--brand)', fontWeight: 600, borderBottom: '1px solid var(--border-light)' }}>POST</td>
+                  <td style={{ padding: '4px 8px', fontFamily: 'var(--font-mono)', color: '#a855f7', borderBottom: '1px solid var(--border-light)', whiteSpace: 'nowrap' }}>
+                    /tools/{call.tool}
+                  </td>
+                  <td style={{ padding: '4px 8px', color: 'var(--brand)', fontWeight: 500, borderBottom: '1px solid var(--border-light)', whiteSpace: 'nowrap' }}>
+                    {call.agent ?? '—'}
+                  </td>
+                  <td style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-light)' }}>
+                    <span style={{
+                      fontSize: 10, padding: '1px 5px', borderRadius: 'var(--r-sm)', fontWeight: 600,
+                      background: result ? 'var(--success-bg)' : isStreaming ? 'var(--warning-bg)' : 'var(--border)',
+                      color: result ? 'var(--success)' : isStreaming ? 'var(--warning)' : 'var(--text-muted)',
+                    }}>
+                      {result ? '200' : isStreaming ? '…' : 'pending'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '4px 8px', color: 'var(--text-dim)', borderBottom: '1px solid var(--border-light)', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
+                    {result?.latency_ms != null ? `${result.latency_ms}ms` : '—'}
+                  </td>
+                  <td style={{ padding: '4px 8px', color: 'var(--text-dim)', borderBottom: '1px solid var(--border-light)', whiteSpace: 'nowrap' }}>
+                    {fmtTs(call.ts)}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Detail panel */}
+      {selected && (
+        <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+          {/* Sub-tab strip */}
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', background: 'var(--bg-page)', flexShrink: 0 }}>
+            {(['request', 'response'] as const).map((pane) => (
+              <button
+                key={pane}
+                onClick={() => setDetailPane(pane)}
+                style={{
+                  padding: '5px 12px',
+                  fontSize: 'var(--text-xs)',
+                  fontWeight: detailPane === pane ? 600 : 400,
+                  color: detailPane === pane ? 'var(--brand)' : 'var(--text-muted)',
+                  background: 'transparent',
+                  border: 'none',
+                  borderBottom: detailPane === pane ? '2px solid var(--brand)' : '2px solid transparent',
+                  cursor: 'pointer',
+                  textTransform: 'capitalize',
+                }}
+              >
+                {pane === 'request' ? '→ Request' : '← Response'}
+              </button>
+            ))}
+            <div style={{ flex: 1 }} />
+            {/* Summary chips */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 10px', fontSize: 10, color: 'var(--text-dim)' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', color: '#a855f7' }}>/tools/{selected.call.tool}</span>
+              {selected.result?.latency_ms != null && (
+                <span style={{ fontFamily: 'var(--font-mono)' }}>{selected.result.latency_ms}ms</span>
+              )}
+            </div>
+          </div>
+
+          {/* Request pane */}
+          {detailPane === 'request' && (
+            <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {/* URL + method row */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: 'var(--bg-page)', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand)', fontFamily: 'var(--font-mono)' }}>POST</span>
+                <span style={{ fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)', color: '#a855f7' }}>
+                  http://amadeus-mcp:8101/tools/{selected.call.tool}
+                </span>
+                <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 'auto' }}>{fmtTs(selected.call.ts)}</span>
+              </div>
+
+              {/* Headers */}
+              <div>
+                <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Headers</p>
+                {[
+                  ['Content-Type', 'application/json'],
+                  ['Accept', 'application/json'],
+                  ['X-Agent', selected.call.agent ?? 'unknown'],
+                  ['X-Tool', selected.call.tool ?? 'unknown'],
+                ].map(([k, v]) => (
+                  <div key={k} style={{ display: 'flex', gap: 8, fontSize: 'var(--text-xs)', padding: '3px 0', borderBottom: '1px solid var(--border-light)' }}>
+                    <span style={{ color: 'var(--text-dim)', minWidth: 120, fontFamily: 'var(--font-mono)' }}>{k}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Body */}
+              <div>
+                <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Body</p>
+                {selected.call.input != null ? (
+                  <pre style={{
+                    fontSize: 11, fontFamily: 'var(--font-mono)',
+                    background: '#0f172a', color: '#e2e8f0',
+                    padding: '10px 12px', borderRadius: 'var(--r-md)',
+                    overflow: 'auto', whiteSpace: 'pre', lineHeight: 1.5, margin: 0,
+                  }}>
+                    {JSON.stringify(selected.call.input, null, 2)}
+                  </pre>
+                ) : (
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)', fontStyle: 'italic' }}>No request body captured</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Response pane */}
+          {detailPane === 'response' && (
+            <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {/* Status row */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: selected.result ? 'var(--success-bg)' : 'var(--bg-page)', borderRadius: 'var(--r-sm)', border: `1px solid ${selected.result ? 'var(--success)' : 'var(--border)'}` }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: selected.result ? 'var(--success)' : 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  {selected.result ? '200 OK' : isStreaming ? '… pending' : '— no response'}
+                </span>
+                {selected.result?.latency_ms != null && (
+                  <span style={{ fontSize: 10, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
+                    {selected.result.latency_ms}ms
+                  </span>
+                )}
+                <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 'auto' }}>{fmtTs(selected.result?.ts)}</span>
+              </div>
+
+              {/* Headers */}
+              <div>
+                <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Headers</p>
+                {[
+                  ['Content-Type', 'application/json'],
+                  ['X-Tool', selected.call.tool ?? 'unknown'],
+                  ['X-Latency-Ms', selected.result?.latency_ms != null ? String(selected.result.latency_ms) : '—'],
+                ].map(([k, v]) => (
+                  <div key={k} style={{ display: 'flex', gap: 8, fontSize: 'var(--text-xs)', padding: '3px 0', borderBottom: '1px solid var(--border-light)' }}>
+                    <span style={{ color: 'var(--text-dim)', minWidth: 120, fontFamily: 'var(--font-mono)' }}>{k}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Body */}
+              <div>
+                <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Body</p>
+                {selected.result?.output != null ? (
+                  <pre style={{
+                    fontSize: 11, fontFamily: 'var(--font-mono)',
+                    background: '#0f172a', color: '#e2e8f0',
+                    padding: '10px 12px', borderRadius: 'var(--r-md)',
+                    overflow: 'auto', whiteSpace: 'pre', lineHeight: 1.5, margin: 0,
+                  }}>
+                    {JSON.stringify(selected.result.output, null, 2)}
+                  </pre>
+                ) : (
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)', fontStyle: 'italic' }}>
+                    {isStreaming ? 'Waiting for response…' : 'No response body captured'}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   )
@@ -313,7 +764,7 @@ function ConnectTab({ mcpInfo }: { mcpInfo?: McpInfo | null }) {
 
 /* ── Main component ──────────────────────────────────────────────────── */
 
-const TABS = ['Connect', 'Tools', 'Tokens', 'Context', 'Console', 'Network', 'Perf', 'Eval'] as const
+const TABS = ['Console', 'AgentEvents', 'Network', 'Perf', 'Tools', 'Tokens', 'Eval', 'Connect'] as const
 type TabId = typeof TABS[number]
 
 interface McpInspectorPanelProps {
@@ -324,7 +775,7 @@ interface McpInspectorPanelProps {
 }
 
 export default function McpInspectorPanel({ events, isStreaming, evalData, mcpInfo }: McpInspectorPanelProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('Tools')
+  const [activeTab, setActiveTab] = useState<TabId>('Console')
 
   // Pair mcp_tool_call with mcp_tool_result
   const toolRows: Array<{ seq: number; call: AgentEvent; result?: AgentEvent }> = []
@@ -354,12 +805,16 @@ export default function McpInspectorPanel({ events, isStreaming, evalData, mcpIn
   // Tokens from done event
   const doneEvent = events.find((e) => e.type === 'done') as (AgentEvent & Record<string, unknown>) | undefined
 
+  // AgentEvents: count pairs for badge
+  const agentHandshakeCount = events.filter((e) => e.type === 'agent_start' && (e.agent as string) !== 'orchestrator').length
+
   const consoleEvents = events.filter((e) => !(e.type === 'token' && e.data))
   const totEvents = events.filter((e) => e.type.startsWith('tot_'))
   const hasActivity = events.some((e) => ['agent_start', 'mcp_tool_call', 'mcp_tool_result', 'tot_start'].includes(e.type))
 
   function tabLabel(tab: TabId): string {
     if (tab === 'Tools' && toolRows.length > 0) return `Tools ●${toolRows.length}`
+    if (tab === 'AgentEvents' && agentHandshakeCount > 0) return `AgentEvents ●${agentHandshakeCount}`
     return tab
   }
 
@@ -392,8 +847,46 @@ export default function McpInspectorPanel({ events, isStreaming, evalData, mcpIn
       {/* Tab content */}
       <div style={{ flex: 1, overflow: 'auto' }}>
 
-        {/* ── Connect ───────────────────────────── */}
-        {activeTab === 'Connect' && <ConnectTab mcpInfo={mcpInfo} />}
+        {/* ── Console ───────────────────────────── */}
+        {activeTab === 'Console' && (
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)' }}>
+            {consoleEvents.length === 0 ? (
+              <p style={{ padding: '12px', color: 'var(--text-muted)' }}>SSE events appear here during streaming.</p>
+            ) : (
+              consoleEvents.map((e, i) => <ConsoleRow key={i} event={e} />)
+            )}
+          </div>
+        )}
+
+        {/* ── AgentEvents ───────────────────────── */}
+        {activeTab === 'AgentEvents' && <AgentEventsTab events={events} isStreaming={isStreaming} />}
+
+        {/* ── Network ───────────────────────────── */}
+        {activeTab === 'Network' && <NetworkTab toolRows={toolRows} isStreaming={isStreaming} />}
+
+        {/* ── Perf ──────────────────────────────── */}
+        {activeTab === 'Perf' && (
+          <div style={{ padding: '12px' }}>
+            {perfEntries.length === 0 ? (
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>Agent latency bars appear after agents complete.</p>
+            ) : (
+              <>
+                <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 10 }}>Per-Agent Latency</p>
+                {perfEntries.map((p) => (
+                  <div key={p.agent} style={{ marginBottom: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                      <span style={{ fontSize: 'var(--text-xs)', color: agentColor(p.agent), fontWeight: 500 }}>{p.agent}</span>
+                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>{p.latency_ms}ms</span>
+                    </div>
+                    <div style={{ height: 6, background: 'var(--border)', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${Math.max(2, (p.latency_ms / maxLatency) * 100)}%`, background: agentColor(p.agent), borderRadius: 3, transition: 'width 0.4s ease' }} />
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        )}
 
         {/* ── Tools ─────────────────────────────── */}
         {activeTab === 'Tools' && (
@@ -486,95 +979,11 @@ export default function McpInspectorPanel({ events, isStreaming, evalData, mcpIn
           </div>
         )}
 
-        {/* ── Context ───────────────────────────── */}
-        {activeTab === 'Context' && (
-          <div style={{ padding: '12px' }}>
-            {events.filter((e) => e.type === 'agent_start').length === 0 ? (
-              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>Agent context payloads appear when agents start.</p>
-            ) : (
-              events.filter((e) => e.type === 'agent_start').map((e, i) => (
-                <div key={i} style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--brand)', marginBottom: 4 }}>{e.agent} — agent_start</div>
-                  <pre style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', background: 'var(--bg-page)', padding: '8px', borderRadius: 'var(--r-md)', overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-                    {JSON.stringify(e, null, 2)}
-                  </pre>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* ── Console ───────────────────────────── */}
-        {activeTab === 'Console' && (
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)' }}>
-            {consoleEvents.length === 0 ? (
-              <p style={{ padding: '12px', color: 'var(--text-muted)' }}>SSE events appear here during streaming.</p>
-            ) : (
-              consoleEvents.map((e, i) => <ConsoleRow key={i} event={e} />)
-            )}
-          </div>
-        )}
-
-        {/* ── Network ───────────────────────────── */}
-        {activeTab === 'Network' && (
-          <div style={{ fontSize: 'var(--text-xs)' }}>
-            {toolRows.length === 0 ? (
-              <p style={{ padding: '12px', color: 'var(--text-muted)' }}>MCP sidecar requests appear when tools are called.</p>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: 'var(--bg-page)' }}>
-                    {['Method', 'Tool / URL', 'Status', 'ms', 'Time'].map((h) => (
-                      <th key={h} style={{ padding: '4px 8px', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {toolRows.map(({ seq, call, result }) => (
-                    <tr key={seq} style={{ background: seq % 2 === 0 ? 'var(--bg-page)' : 'var(--bg-surface)' }}>
-                      <td style={{ padding: '4px 8px', color: 'var(--brand)', fontWeight: 600, borderBottom: '1px solid var(--border-light)' }}>POST</td>
-                      <td style={{ padding: '4px 8px', fontFamily: 'var(--font-mono)', color: '#a855f7', borderBottom: '1px solid var(--border-light)' }}>/tools/{call.tool}</td>
-                      <td style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-light)' }}>
-                        <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 'var(--r-sm)', background: result ? 'var(--success-bg)' : 'var(--warning-bg)', color: result ? 'var(--success)' : 'var(--warning)', fontWeight: 600 }}>
-                          {result ? '200' : '…'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '4px 8px', color: 'var(--text-dim)', borderBottom: '1px solid var(--border-light)' }}>{result?.latency_ms != null ? result.latency_ms : '—'}</td>
-                      <td style={{ padding: '4px 8px', color: 'var(--text-dim)', borderBottom: '1px solid var(--border-light)' }}>{fmtTs(call.ts)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )}
-
-        {/* ── Perf ──────────────────────────────── */}
-        {activeTab === 'Perf' && (
-          <div style={{ padding: '12px' }}>
-            {perfEntries.length === 0 ? (
-              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>Agent latency bars appear after agents complete.</p>
-            ) : (
-              <>
-                <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 10 }}>Per-Agent Latency</p>
-                {perfEntries.map((p) => (
-                  <div key={p.agent} style={{ marginBottom: 10 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)', fontWeight: 500 }}>{p.agent}</span>
-                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>{p.latency_ms}ms</span>
-                    </div>
-                    <div style={{ height: 6, background: 'var(--border)', borderRadius: 3, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${Math.max(2, (p.latency_ms / maxLatency) * 100)}%`, background: 'var(--brand)', borderRadius: 3, transition: 'width 0.4s ease' }} />
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
-        )}
-
         {/* ── Eval ──────────────────────────────── */}
         {activeTab === 'Eval' && <EvalTab evalData={evalData} />}
+
+        {/* ── Connect ───────────────────────────── */}
+        {activeTab === 'Connect' && <ConnectTab mcpInfo={mcpInfo} />}
 
       </div>
     </div>

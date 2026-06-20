@@ -35,6 +35,40 @@ _USERS: dict[str, dict] = {
         "email": "traveller@navanvoyage.demo",
         "password_hash": _pwd.hash(os.getenv("SEED_TRAVELLER_PASSWORD", "travel123")),
     },
+    # Acme Corp demo personas
+    "steve.m": {
+        "username": "steve.m",
+        "role": "traveller",
+        "display_name": "Steve M",
+        "email": "steve.m@acmecorp.com",
+        "policy": "executive",
+        "department": "C-Suite",
+        "title": "Executive President",
+        "base_airport": "SFO",
+        "password_hash": _pwd.hash("acme2026"),
+    },
+    "rick.m": {
+        "username": "rick.m",
+        "role": "traveller",
+        "display_name": "Rick M",
+        "email": "rick.m@acmecorp.com",
+        "policy": "sales",
+        "department": "Sales",
+        "title": "Sales Executive",
+        "base_airport": "SFO",
+        "password_hash": _pwd.hash("acme2026"),
+    },
+    "nicholas.j": {
+        "username": "nicholas.j",
+        "role": "traveller",
+        "display_name": "Nicholas J",
+        "email": "nicholas.j@acmecorp.com",
+        "policy": "conference",
+        "department": "Engineering",
+        "title": "Engineer",
+        "base_airport": "SFO",
+        "password_hash": _pwd.hash("acme2026"),
+    },
 }
 
 

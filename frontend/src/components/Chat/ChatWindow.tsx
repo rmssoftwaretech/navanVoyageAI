@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import MessageBubble from './MessageBubble'
 import TravelSearchForm from './TravelSearchForm'
+import AcmePersonaChips from './AcmePersonaChips'
 import InputBar from '@/components/InputBar'
 import ShareModal from '@/components/ShareModal'
 import BookingWizard from '@/components/Booking/BookingWizard'
@@ -106,7 +107,13 @@ export default function ChatWindow({
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 0' }}>
         {isEmpty ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: '16px 24px' }}>
-            <TravelSearchForm onSearch={onSend} disabled={isStreaming} />
+            {(() => {
+              try {
+                const p = localStorage.getItem('nva_acme_persona')
+                if (p) return <AcmePersonaChips persona={p} onSend={onSend} disabled={isStreaming} />
+              } catch { /* ignore */ }
+              return <TravelSearchForm onSearch={onSend} disabled={isStreaming} />
+            })()}
           </div>
         ) : (
           <>

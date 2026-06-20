@@ -82,6 +82,17 @@ services:
     networks:
       - nva-net
 
+  acme-corp-ui:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.acme-corp
+    ports:
+      - "5212:80"
+    depends_on:
+      - backend
+    networks:
+      - nva-net
+
   nginx:
     image: nginx:alpine
     ports:
@@ -92,6 +103,7 @@ services:
       - frontend
       - frontend-spectrum
       - frontend-angular
+      - acme-corp-ui
       - backend
     networks:
       - nva-net

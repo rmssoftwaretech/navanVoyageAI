@@ -1,0 +1,12 @@
+FROM node:20-alpine AS build
+
+WORKDIR /app
+COPY frontend-acme/package*.json ./
+RUN npm ci
+
+COPY frontend-acme/ .
+RUN npm run build
+
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY infrastructure/nginx/spa.conf /etc/nginx/conf.d/default.conf

@@ -18,6 +18,7 @@ _CONFIG = Path(__file__).parent.parent.parent / "config"
 async def seed_db(db: AsyncIOMotorDatabase) -> None:
     await _seed_policies(db)
     await _seed_users(db)
+    await _seed_employees(db)
 
 
 async def _seed_policies(db: AsyncIOMotorDatabase) -> None:
@@ -54,3 +55,20 @@ async def _seed_users(db: AsyncIOMotorDatabase) -> None:
             upsert=True,
         )
     log.info("Seeded %d users", len(users))
+
+
+async def _seed_employees(db: AsyncIOMotorDatabase) -> None:
+    employees_file = _CONFIG / "employees_1000.json"
+    if not employees_file.exists():
+        return
+    employees = json.loads(employees_file.read_text())
+    inserted = 0
+    for emp in employees:
+        result = await db["nva_employee_data"].update_one(
+            {"employee_id": emp["employee_id"]},
+            {"$setOnInsert": emp},
+            upsert=True,
+        )
+        if result.upserted_id:
+            inserted += 1
+    log.info("Seeded %d employees (%d new)", len(employees), inserted)

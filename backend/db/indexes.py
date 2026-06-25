@@ -55,6 +55,14 @@ async def create_indexes(db: AsyncIOMotorDatabase) -> None:
             unique=True,
         )
 
+        # nva_employee_data (NVA-40) — 1000-employee mock dataset
+        await db["nva_employee_data"].create_index(
+            [("employee_id", ASCENDING)], unique=True
+        )
+        await db["nva_employee_data"].create_index([("department", ASCENDING)])
+        await db["nva_employee_data"].create_index([("travel_tier", ASCENDING)])
+        await db["nva_employee_data"].create_index([("active", ASCENDING)])
+
         log.info("MongoDB indexes created / verified for navanVoyageAI")
     except Exception as exc:
         log.warning("Index creation warning: %s", exc)

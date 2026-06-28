@@ -198,5 +198,4 @@ Accessible via ⚙ gear icon → **admin / admin123**:
 
 ## Related
 
-- [`EnterpriseDataAgent`](../EnterpriseDataAgent/) — parent platform this demo extends
 - Repo: https://github.com/rmssoftwaretech/navanVoyageAI
